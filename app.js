@@ -4,6 +4,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const sharp = require('sharp');
+const axios = require('axios');
 const session = require('express-session');
 
 const app = express();
@@ -39,6 +40,16 @@ db.exec(`
     is_wishlist INTEGER DEFAULT 0
   )
 `);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  )
+`);
+
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('token_discogs', '');
+
 
 // --- 2. CONFIGURATION DE MULTER (UPLOADS) ---
 const uploadDir = './public/uploads';
@@ -110,6 +121,10 @@ app.get('/inventory.html', isAuthenticated, (req, res) => {
 
 app.get('/add.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'add.html'));
+});
+
+app.get('/settings', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/settings.html'));
 });
 
 // Libère l'accès aux fichiers statiques (CSS, images, login.html)
@@ -238,7 +253,108 @@ app.delete('/api/albums/:id', isAuthenticated, (req, res) => {
     res.json({ success: true });
 });
 
+///////////////////////////////////////////////////////////////////////////////////
+//PAGE SETTINGS////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+//// Route pour SAUVEGARDER le token
+app.post('/api/settings/token', (req, res) => {
+    const { token } = req.body;
+    try {
+        const stmt = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        stmt.run('token_discogs', token);
+        res.json({ success: true, message: "Token enregistré" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Route pour RÉCUPÉRER le token (pour l'afficher dans l'input au chargement)
+app.get('/api/settings/token', (req, res) => {
+    const row = db.prepare("SELECT value FROM settings WHERE key = ?").get('token_discogs');
+    res.json({ token: row ? row.value : "" });
+});
+
+//// Route pour vider la base
+app.post('/api/settings/reset', isAuthenticated, (req, res) => {
+    try {
+        db.prepare('DELETE FROM albums').run();
+        res.json({ success: true, message: "Base de données vidée" });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+//// API : Scan Discogs (Téléchargement local + Sharp)
+app.post('/api/settings/scan-covers', async (req, res) => {
+    // 1. Récupération du token depuis la BDD
+    const row = db.prepare("SELECT value FROM settings WHERE key = ?").get('token_discogs');
+    const DISCOGS_TOKEN = row ? row.value : null;
+
+    if (!DISCOGS_TOKEN || DISCOGS_TOKEN.trim() === "") {
+        return res.status(400).json({ success: false, message: "Token Discogs manquant dans les paramètres." });
+    }
+    const albums = db.prepare("SELECT id, artist, title FROM albums WHERE cover_url IS NULL OR cover_url = ''").all();
+    console.log(`🔎 Début du scan pour ${albums.length} albums...`);
+    let count = 0;
+
+    for (const album of albums) {
+        try {
+            // 1. RECHERCHE de l'album sur Discogs
+            const searchResponse = await axios.get(`https://api.discogs.com/database/search`, {
+                params: {
+                    artist: album.artist,
+                    release_title: album.title,
+                    type: 'release',
+                    token: DISCOGS_TOKEN
+                },
+                headers: { 'User-Agent': 'SillonApp/1.0' }
+            });
+
+            const results = searchResponse.data.results;
+
+            // On vérifie si on a trouvé un résultat avec une image
+            if (results && results.length > 0 && results[0].cover_image) {
+                const imgUrl = results[0].cover_image;
+                console.log(`📸 Image trouvée pour "${album.title}", téléchargement...`);
+
+                // 2. TÉLÉCHARGEMENT de l'image
+                const imageResponse = await axios.get(imgUrl, {
+                    responseType: 'arraybuffer',
+                    headers: { 
+                        'User-Agent': 'SillonApp/1.0',
+                        'Authorization': `Discogs token=${DISCOGS_TOKEN}`
+                    }
+                });
+
+                // 3. TRAITEMENT ET OPTIMISATION avec Sharp
+                const filename = `discogs-${album.id}.jpg`;
+                const outputPath = path.join(__dirname, 'public', 'uploads', filename);
+
+                await sharp(imageResponse.data)
+                    .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
+                    .jpeg({ quality: 80 })
+                    .toFile(outputPath);
+
+                // 4. MISE À JOUR de la base de données
+                db.prepare("UPDATE albums SET cover_url = ? WHERE id = ?")
+                  .run(`/uploads/${filename}`, album.id);
+                
+                count++;
+                console.log(`✅ Image sauvegardée pour ${album.title}`);
+
+                // Pause de 2s pour respecter les limites de l'API Discogs
+                await new Promise(r => setTimeout(r, 2000));
+            } else {
+                console.log(`❓ Aucun résultat trouvé pour "${album.artist} - ${album.title}"`);
+            }
+
+        } catch (error) {
+            console.error(`❌ Erreur album ${album.title}:`, error.response?.status || error.message);
+        }
+    }
+    res.json({ success: true, message: `${count} pochettes récupérées sur Discogs !` });
+});
+
 // --- 8. LANCEMENT ---
 app.listen(port, () => {
-    console.log(`MyVinyl tourne sur http://localhost:${port}`);
+    console.log(`Sillon tourne sur http://localhost:${port}`);
 });
