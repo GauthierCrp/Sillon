@@ -284,25 +284,48 @@ app.post('/api/settings/reset', isAuthenticated, (req, res) => {
 });
 
 //// API : Scan Discogs (Téléchargement local + Sharp)
-app.post('/api/settings/scan-covers', async (req, res) => {
-    // 1. Récupération du token depuis la BDD
+
+function normalizeSearchTerm(term) {
+    if (!term) return "";
+    return term
+        .normalize("NFD") // Sépare les accents des lettres
+        .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+        .replace(/[^\w\s]/gi, ' ') // Remplace tout ce qui n'est pas lettre/chiffre (ex: +, &, #) par un espace
+        .replace(/\s+/g, ' ') // Supprime les doubles espaces
+        .trim();
+}
+
+app.get('/api/settings/scan-covers', isAuthenticated, async (req, res) => {
+    // Configuration Headers pour le streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
     const row = db.prepare("SELECT value FROM settings WHERE key = ?").get('token_discogs');
     const DISCOGS_TOKEN = row ? row.value : null;
 
     if (!DISCOGS_TOKEN || DISCOGS_TOKEN.trim() === "") {
-        return res.status(400).json({ success: false, message: "Token Discogs manquant dans les paramètres." });
+        res.write(`data: ${JSON.stringify({ error: "Token Discogs manquant" })}\n\n`);
+        return res.end();
     }
+
     const albums = db.prepare("SELECT id, artist, title FROM albums WHERE cover_url IS NULL OR cover_url = ''").all();
-    console.log(`🔎 Début du scan pour ${albums.length} albums...`);
+    const total = albums.length;
     let count = 0;
+    let processed = 0;
 
     for (const album of albums) {
+        processed++;
         try {
-            // 1. RECHERCHE de l'album sur Discogs
+            const cleanArtist = normalizeSearchTerm(album.artist);
+            const cleanTitle = normalizeSearchTerm(album.title);
+
+            console.log(`🔍 Recherche optimisée : "${cleanArtist}" - "${cleanTitle}"`);
+
             const searchResponse = await axios.get(`https://api.discogs.com/database/search`, {
                 params: {
-                    artist: album.artist,
-                    release_title: album.title,
+                    artist: cleanArtist,
+                    release_title: cleanTitle,
                     type: 'release',
                     token: DISCOGS_TOKEN
                 },
@@ -311,21 +334,13 @@ app.post('/api/settings/scan-covers', async (req, res) => {
 
             const results = searchResponse.data.results;
 
-            // On vérifie si on a trouvé un résultat avec une image
             if (results && results.length > 0 && results[0].cover_image) {
                 const imgUrl = results[0].cover_image;
-                console.log(`📸 Image trouvée pour "${album.title}", téléchargement...`);
-
-                // 2. TÉLÉCHARGEMENT de l'image
                 const imageResponse = await axios.get(imgUrl, {
                     responseType: 'arraybuffer',
-                    headers: { 
-                        'User-Agent': 'SillonApp/1.0',
-                        'Authorization': `Discogs token=${DISCOGS_TOKEN}`
-                    }
+                    headers: { 'User-Agent': 'SillonApp/1.0', 'Authorization': `Discogs token=${DISCOGS_TOKEN}` }
                 });
 
-                // 3. TRAITEMENT ET OPTIMISATION avec Sharp
                 const filename = `discogs-${album.id}.jpg`;
                 const outputPath = path.join(__dirname, 'public', 'uploads', filename);
 
@@ -334,26 +349,99 @@ app.post('/api/settings/scan-covers', async (req, res) => {
                     .jpeg({ quality: 80 })
                     .toFile(outputPath);
 
-                // 4. MISE À JOUR de la base de données
-                db.prepare("UPDATE albums SET cover_url = ? WHERE id = ?")
-                  .run(`/uploads/${filename}`, album.id);
-                
+                db.prepare("UPDATE albums SET cover_url = ? WHERE id = ?").run(`/uploads/${filename}`, album.id);
                 count++;
-                console.log(`✅ Image sauvegardée pour ${album.title}`);
-
-                // Pause de 2s pour respecter les limites de l'API Discogs
-                await new Promise(r => setTimeout(r, 2000));
-            } else {
-                console.log(`❓ Aucun résultat trouvé pour "${album.artist} - ${album.title}"`);
             }
 
+            // ENVOI DE LA PROGRESSION AU NAVIGATEUR
+            const progress = Math.round((processed / total) * 100);
+            res.write(`data: ${JSON.stringify({ progress, current: processed, total, title: album.title })}\n\n`);
+
+            // Respect du rate limit Discogs (uniquement si ce n'est pas le dernier)
+            if (processed < total) await new Promise(r => setTimeout(r, 2000));
+
         } catch (error) {
-            console.error(`❌ Erreur album ${album.title}:`, error.response?.status || error.message);
+            console.error(`Error ${album.title}:`, error.message);
         }
     }
-    res.json({ success: true, message: `${count} pochettes récupérées sur Discogs !` });
+
+    res.write(`data: ${JSON.stringify({ success: true, message: `${count} pochettes récupérées !` })}\n\n`);
+    res.end();
 });
 
+
+////Import en Masse via csv//////////
+
+const csv = require('csv-parser');
+
+app.post('/api/settings/import-csv', isAuthenticated, upload.single('csv_file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "Aucun fichier reçu" });
+
+    const results = [];
+
+    // Lecture du flux CSV
+    fs.createReadStream(req.file.path)
+        .pipe(csv({ separator: ';',
+            headers: [
+                'catalog_id', 'artist', 'title', 'label', 'format', 
+                'year', 'vinyl_condition', 'sleeve_condition', 'notes'
+            ],
+            skipLines: 1 // On saute la ligne d'en-tête du fichier CSV
+        }))
+        .on('data', (data) => {
+            // Nettoyage et préparation des données
+            results.push({
+                catalog_id: data.catalog_id?.trim() || '',
+                artist: data.artist?.trim() || 'Inconnu',
+                title: data.title?.trim() || 'Sans titre',
+                label: data.label?.trim() || '',
+                format: data.format?.trim() || '',
+                year: parseInt(data.year) || 0,
+                vinyl_condition: data.vinyl_condition?.trim() || '',
+                sleeve_condition: data.sleeve_condition?.trim() || '',
+                notes: data.notes?.trim() || ''
+            });
+        })
+        .on('end', () => {
+            if (results.length === 0) {
+                return res.status(400).json({ error: "Le fichier CSV est vide." });
+            }
+
+            // Insertion en masse dans la base de données
+            const insert = db.prepare(`
+                INSERT INTO albums (
+                    catalog_id, artist, title, label, format, 
+                    year, vinyl_condition, sleeve_condition, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+
+            const insertMany = db.transaction((albums) => {
+                for (const album of albums) {
+                    insert.run(
+                        album.catalog_id,
+                        album.artist,
+                        album.title,
+                        album.label,
+                        album.format,
+                        album.year,
+                        album.vinyl_condition,
+                        album.sleeve_condition,
+                        album.notes
+                    );
+                }
+            });
+
+            try {
+                insertMany(results);
+                // Suppression du fichier temporaire après import
+                fs.unlinkSync(req.file.path);
+                res.json({ success: true, message: `${results.length} albums importés avec succès !` });
+            } catch (err) {
+                console.error("Erreur insertion BDD:", err);
+                res.status(500).json({ error: "Erreur lors de l'écriture en base de données." });
+            }
+        });
+});
 // --- 8. LANCEMENT ---
 app.listen(port, () => {
     console.log(`Sillon tourne sur http://localhost:${port}`);

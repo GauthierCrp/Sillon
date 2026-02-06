@@ -125,9 +125,15 @@
             </div>
             <button class="btn-action btn-primary" onclick="saveToken()">Enregistrer le Token</button>
             <div id="token-status" class="status-msg"></div>
-            
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
             <p style="font-size: 0.85rem; opacity: 0.7;">Scanner les pochettes manquantes une fois le token configuré :</p>
+                        <div id="scan-progress-container" style="display: none; margin: 20px 0;">
+            <div style="width: 100%; background: rgba(255,255,255,0.1); height: 12px; border-radius: 6px; overflow: hidden;">
+                    <div id="scan-bar" style="width: 0%; height: 100%; background: #4ade80; transition: width 0.4s ease;"></div>
+                </div>
+                <p id="scan-status-text" style="font-size: 0.85rem; margin-top: 10px; text-align: center; color: #4ade80;"></p>
+            </div>
             <button id="scan-btn" class="btn-action btn-primary" onclick="scanLibrary()">Lancer le Scan</button>
             <div id="scan-status" class="status-msg"></div>
         </section>
@@ -186,18 +192,39 @@
             } catch (err) { status.innerText = "❌ Erreur de sauvegarde."; }
         }
 
-        async function scanLibrary() {
+        function scanLibrary() {
             const btn = document.getElementById('scan-btn');
-            const status = document.getElementById('scan-status');
+            const container = document.getElementById('scan-progress-container');
+            const bar = document.getElementById('scan-bar');
+            const statusText = document.getElementById('scan-status-text');
+
             btn.disabled = true;
-            status.innerText = "⏳ Scan en cours...";
-            try {
-                const res = await fetch('/api/settings/scan-covers', { method: 'POST' });
-                const data = await res.json();
-                status.style.color = "#4ade80";
-                status.innerText = "✅ " + data.message;
-            } catch (err) { status.innerText = "❌ Erreur scan."; }
-            finally { btn.disabled = false; }
+            container.style.display = 'block';
+            bar.style.width = '0%';
+
+            // On utilise EventSource pour lire le flux SSE du serveur
+            const eventSource = new EventSource('/api/settings/scan-covers');
+
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.progress) {
+                    bar.style.width = data.progress + '%';
+                    statusText.innerText = `Scan en cours : ${data.current}/${data.total} (${data.title})`;
+                }
+
+                if (data.success || data.error) {
+                    statusText.innerText = data.success ? "✅ " + data.message : "❌ " + data.error;
+                    eventSource.close(); // Important de fermer la connexion
+                    btn.disabled = false;
+                }
+            };
+
+            eventSource.onerror = () => {
+                statusText.innerText = "❌ Erreur de connexion au serveur.";
+                eventSource.close();
+                btn.disabled = false;
+            };
         }
 
         async function resetDatabase() {
