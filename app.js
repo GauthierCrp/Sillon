@@ -9,6 +9,16 @@ const session = require('express-session');
 const app = express();
 const port = 3002;
 
+
+// --- CRÉATION AUTOMATIQUE DES DOSSIERS ---
+const dirs = ['./database', './public/uploads'];
+dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`📁 Dossier créé : ${dir}`);
+    }
+});
+
 // --- 1. CONFIGURATION DE LA BASE DE DONNÉES ---
 const db = new Database('./database/collection.db');
 db.exec(`
