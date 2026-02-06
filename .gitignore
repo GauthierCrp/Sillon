@@ -1,0 +1,4 @@
+node_modules/
+database/collection.db
+public/uploads/*
+.DS_Store

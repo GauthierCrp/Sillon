@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyVinyl - Dashboard</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            color: #eee;
+            /* Superposition : Points > Voile Sombre > Image */
+            background: 
+                radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
+                linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                url('background.jpg') no-repeat center center fixed;
+            background-size: 20px 20px, cover, cover;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-wrapper {
+            max-width: 1000px;
+            width: 100%;
+            display: flex;
+            font-family: Nunito;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3.5em;
+            margin: 0;
+            letter-spacing: 8px;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        header p {
+            color: #aaa;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        /* Conteneur des Stats - Aligné horizontalement */
+        .stats-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            min-width: 180px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .stat-card h3 {
+            color: #bbb;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .stat-card p {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 0;
+            color: #fff;
+        }
+
+        /* Grille des Tuiles - 4 colonnes sur une ligne */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .menu-tile {
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            color: white;
+            padding: 35px 15px;
+            border-radius: 18px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .menu-tile:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        .tile-icon {
+            font-size: 2em;
+        }
+
+        /* Responsive : passage en 2x2 sur tablettes/mobiles */
+        @media (max-width: 768px) {
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ff6b6b; /* Un rouge doux pour indiquer la sortie */
+            text-decoration: none;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1000; /* Pour qu'il reste au-dessus de tout */
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 60, 60, 0.2);
+            border-color: rgba(255, 107, 107, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .logout-btn svg {
+            transition: transform 0.3s ease;
+        }
+
+        .logout-btn:hover svg {
+            transform: translateX(3px);
+        }
+    </style>
+</head>
+<body>
+    <a href="/logout" class="logout-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        Déconnexion
+    </a>
+    <div class="main-wrapper">
+        <header>
+            <h1>SILLON</h1>
+            <p>Collection Manager</p>
+        </header>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total Vinyles</h3>
+                <p id="total-albums">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Top Style</h3>
+                <p id="top-artist" style="font-size: 1.2em; padding-top: 10px;">Rock</p>
+            </div>
+            <div class="stat-card">
+                <h3>Wishlist</h3>
+                <p id="total-wishlist">0</p>
+            </div>
+        </div>
+
+        <nav class="menu-grid">
+            <a href="inventory.html" class="menu-tile">
+                <span class="tile-icon">📦</span>
+                <span>Collection</span>
+            </a>
+            <a href="add.html" class="menu-tile">
+                <span class="tile-icon">➕</span>
+                <span>Ajouter</span>
+            </a>
+            <a href="wishlist.html" class="menu-tile">
+                <span class="tile-icon">✨</span>
+                <span>Wishlist</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        // Fonction pour charger les statistiques depuis l'API
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/albums?wishlist=false');
+                const albums = await response.json();
+                
+                const wishlistResponse = await fetch('/api/albums?wishlist=true');
+                const wishlist = await wishlistResponse.json();
+
+                document.getElementById('total-albums').textContent = albums.length;
+                document.getElementById('total-wishlist').textContent = wishlist.length;
+                
+                // Calcul simple du style le plus présent
+                if(albums.length > 0) {
+                    const styles = albums.map(a => a.style).filter(s => s);
+                    if(styles.length > 0) {
+                        const topStyle = styles.sort((a,b) =>
+                            styles.filter(v => v===a).length - styles.filter(v => v===b).length
+                        ).pop();
+                        document.getElementById('top-artist').textContent = topStyle;
+                    }
+                }
+            } catch (err) {
+                console.error("Erreur stats:", err);
+            }
+        }
+
+        window.onload = loadStats;
+    </script>
+</body>
+</html>

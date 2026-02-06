@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>MyVinyl - Connexion</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h2 { 
+            font-family: 'Nunito', sans-serif; /* Application de la police */
+            font-weight: 800;                 /* Très gras pour le côté premium */
+            margin-bottom: 30px; 
+            letter-spacing: 2px;
+            text-transform: uppercase;        /* Pour un look logo */
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4b1947;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        button:hover { background: #39437e; }
+        .error { color: #ff6b6b; margin-top: 15px; display: none; }
+        .logo-container {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .vinyl-logo {
+            width: 100px; /* Ajuste la taille selon ton fichier */
+            height: 100px;
+            object-fit: contain;
+            border-radius: 50%; /* Force la forme circulaire si besoin */
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
+            animation: spin 6s linear infinite; /* Rotation un peu plus lente pour le réalisme */
+        }
+
+        /* L'animation de rotation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* On peaufine le titre Nunito juste en dessous */
+        h2 {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 26px;
+            margin-top: 5px;
+            letter-spacing: 3px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo-container">
+            <img src="dark_logo.png" alt="Logo MyVinyl" class="vinyl-logo">
+        </div>
+
+        <h2>SILLON</h2>
+        
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Utilisateur" required>
+            <input type="password" id="password" placeholder="Mot de passe" required>
+            <button type="submit">Se connecter</button>
+            <div id="error-msg" class="error">Identifiants invalides</div>
+        </form>
+    </div>
+
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.ok) {
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

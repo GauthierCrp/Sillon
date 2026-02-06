@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyVinyl - Ajouter un Album</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            color: #eee;
+            background: 
+                radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
+                linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                url('background.jpg') no-repeat center center fixed;
+            background-size: 20px 20px, cover, cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        select option {
+            background-color: #2c3e50; /* Un fond sombre pour l'intérieur du menu */
+            color: white;              /* Texte blanc pour bien lire */
+        }
+
+        /* Optionnel : Améliorer l'apparence du select lui-même */
+        select {
+            cursor: pointer;
+            appearance: none; /* Supprime le style par défaut de certains navigateurs */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            padding-right: 30px !important;
+        }
+
+        .form-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        h2 { text-align: center; letter-spacing: 2px; text-transform: uppercase; margin-top: 0; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        label { display: block; font-size: 0.8em; color: #bbb; margin-bottom: 5px; margin-top: 10px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input:focus, textarea:focus { border-color: var(--accent); }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: 0.3s;
+            font-size: 1em;
+        }
+
+        button:hover { background: #ff5e4d; transform: translateY(-2px); }
+
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #aaa; text-decoration: none; font-size: 0.9em; }
+        .back-link:hover { color: #fff; }
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ff6b6b; /* Un rouge doux pour indiquer la sortie */
+            text-decoration: none;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1000; /* Pour qu'il reste au-dessus de tout */
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 60, 60, 0.2);
+            border-color: rgba(255, 107, 107, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .logout-btn svg {
+            transition: transform 0.3s ease;
+        }
+
+        .logout-btn:hover svg {
+            transform: translateX(3px);
+        }
+    </style>
+</head>
+<body>
+<a href="/logout" class="logout-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+    Déconnexion
+</a>
+<div class="form-card">
+    <h2>Nouvel Album</h2>
+    <form id="add-album-form">
+        <div class="form-grid">
+            <div class="full-width">
+                <label>Artiste *</label>
+                <input type="text" id="artist" name="artist" required placeholder="Ex: Pink Floyd">
+            </div>
+
+            <div class="full-width">
+                <label>Titre de l'album *</label>
+                <input type="text" id="title" name="title" required placeholder="Ex: The Dark Side of the Moon">
+            </div>
+
+            <div>
+                <label>ID Catalogue</label>
+                <input type="text" id="catalog_id" name="catalog_id" placeholder="Ex: SHVL 804">
+            </div>
+
+            <div>
+                <label>Label</label>
+                <input type="text" id="label" name="label" placeholder="Ex: Harvest">
+            </div>
+
+            <div>
+                <label>Année de Sortie</label>
+                <input type="number" id="year" name="year" placeholder="1973">
+            </div>
+
+            <div>
+                <label>Format</label>
+                <select id="format" name="format">
+                    <option value="33T">33 Tours (LP)</option>
+                    <option value="45T">45 Tours (Single)</option>
+                    <option value="10">10 pouces</option>
+                    <option value="Double LP">Double LP</option>
+                </select>
+            </div>
+
+            <div>
+                <label>État du Vinyle</label>
+                <select id="vinyl_condition" name="vinyl_condition">
+                    <option value="M">Mint (M)</option>
+                    <option value="NM">Near Mint (NM)</option>
+                    <option value="VG+">Very Good Plus (VG+)</option>
+                    <option value="VG" selected>Very Good (VG)</option>
+                    <option value="G">Good (G)</option>
+                </select>
+            </div>
+
+            <div>
+                <label>État de la Pochette</label>
+                <select id="sleeve_condition" name="sleeve_condition">
+                    <option value="M">Mint (M)</option>
+                    <option value="NM">Near Mint (NM)</option>
+                    <option value="VG+">Very Good Plus (VG+)</option>
+                    <option value="VG" selected>Very Good (VG)</option>
+                    <option value="G">Good (G)</option>
+                </select>
+            </div>
+
+            <div class="full-width">
+                <label>Pochette (Image)</label>
+                <input type="file" id="cover_file" name="cover_file" accept="image/*">
+            </div>
+
+            <div class="full-width">
+                <label>Liste des pistes</label>
+                <textarea id="tracklist" name="tracklist" rows="4" placeholder="1. Speak to Me..."></textarea>
+            </div>
+
+            <div class="full-width">
+                <label>Notes</label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Informations complémentaires..."></textarea>
+            </div>
+        </div>
+
+        <button type="submit">Ajouter à la collection</button>
+    </form>
+    <a href="index.html" class="back-link">← Retour au Dashboard</a>
+</div>
+
+<script>
+    document.getElementById('add-album-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+
+        try {
+            const response = await fetch('/api/albums', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Album ajouté avec succès !');
+                window.location.href = 'inventory.html';
+            } else {
+                alert('Erreur lors de l\'ajout.');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur réseau.');
+        }
+    });
+</script>
+
+</body>
+</html>

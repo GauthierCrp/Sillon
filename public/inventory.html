@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>MyVinyl - Ma Collection</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #380d38;
+            --success: #27ae60;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+        }
+    
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #eee;
+            /* Fond cohérent avec l'index */
+            background: 
+                radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
+                linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+                url('background.jpg') no-repeat center center fixed;
+            background-size: 20px 20px, cover, cover;
+        }
+    
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+            padding: 10px;
+        }
+    
+        #search { 
+            padding: 12px 20px; 
+            width: 300px; 
+            border-radius: 25px; 
+            border: 1px solid var(--glass-border); 
+            background: var(--glass-bg);
+            color: white;
+            backdrop-filter: blur(10px);
+            outline: none;
+        }
+    
+        #search::placeholder { color: #aaa; }
+    
+        /* La Grille */
+        .vinyl-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 25px; 
+        }
+    
+        /* La Carte Album style Verre */
+        .vinyl-card { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(5px);
+            border-radius: 12px; 
+            overflow: hidden; 
+            border: 1px solid var(--glass-border);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex; 
+            flex-direction: column; 
+            cursor: pointer;
+        }
+    
+        .vinyl-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            border-color: rgba(255,255,255,0.3);
+        }
+    
+        .cover-container { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #222; }
+        .cover-img { width: 100%; height: 100%; object-fit: cover; }
+        
+    
+        .vinyl-info { padding: 15px; flex-grow: 1; }
+        .vinyl-title { font-weight: bold; font-size: 1.1em; margin: 0; color: #fff; }
+        .vinyl-artist { color: #bbb; margin: 5px 0; font-size: 0.9em; }
+    
+        /* Fenêtre Modale */
+        .modal {
+            display: none; position: fixed; z-index: 1000; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+        }
+    
+        .modal-content {
+            background: rgba(30, 30, 30, 0.95);
+            margin: 5% auto; padding: 30px;
+            border-radius: 20px; width: 90%; max-width: 800px;
+            display: flex; gap: 30px; position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+    
+        .close-modal { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #666; }
+        .close-modal:hover { color: #fff; }
+    
+        .modal-left { flex: 1; }
+        .modal-right { flex: 1.5; }
+        .modal-cover { width: 100%; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        
+        /* Formulaire dans la modale */
+        input, select, textarea {
+            width: 100%; padding: 12px; margin-bottom: 12px; 
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 8px; box-sizing: border-box; color: white;
+        }
+    
+        input[readonly], textarea[readonly], select[disabled] {
+            background: rgba(0, 0, 0, 0.3); border-color: transparent; color: #aaa; cursor: default;
+        }
+    
+        h4 { margin: 10px 0; color: #888; text-transform: uppercase; font-size: 0.8em; }
+    
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
+        
+        .btn-edit { background: var(--primary); color: white; }
+        .btn-save { background: var(--success); color: white; display: none; }
+        .btn-delete { background: var(--accent); color: white; width: 50px; flex: none; }
+        
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+    
+        #edit_cover_file_container { 
+            margin-top: 15px; 
+            padding: 10px; 
+            border: 1px dashed rgba(255,255,255,0.2); 
+            border-radius: 8px; 
+            display: none;
+        }
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ff6b6b; /* Un rouge doux pour indiquer la sortie */
+            text-decoration: none;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1000; /* Pour qu'il reste au-dessus de tout */
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 60, 60, 0.2);
+            border-color: rgba(255, 107, 107, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .logout-btn svg {
+            transition: transform 0.3s ease;
+        }
+
+        .logout-btn:hover svg {
+            transform: translateX(3px);
+        }
+    </style>
+</head>
+<body>
+    <a href="/logout" class="logout-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        Déconnexion
+    </a>
+    <div class="container">
+        <div class="header-bar">
+            <a href="index.html" style="text-decoration:none; color:var(--primary); font-weight:bold;">← Dashboard</a>
+            <input type="text" id="search" placeholder="Rechercher..." onkeyup="filterGrid()">
+        </div>
+        <div id="vinyl-grid" class="vinyl-grid"></div>
+    </div>
+
+    <div id="albumModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            
+            <div class="modal-left">
+                <img id="modalCover" class="modal-cover" src="" alt="Pochette">
+                <div id="edit_cover_file_container">
+                    <label style="font-size:0.8em;">Changer l'image :</label>
+                    <input type="file" id="edit_cover_file" accept="image/*">
+                </div>
+            </div>
+
+            <div class="modal-right">
+                <form id="edit-form">
+                    <input type="hidden" id="edit_id">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>ID Catalogue</label>
+                            <input type="text" id="edit_catalog_id" readonly>
+                        </div>
+                        <div>
+                            <label>Label</label>
+                            <input type="text" id="edit_label" readonly>
+                        </div>
+                    </div>
+            
+                    <label>Artiste</label>
+                    <input type="text" id="edit_artist" readonly required>
+                    
+                    <label>Titre</label>
+                    <input type="text" id="edit_title" readonly required>
+
+                    <label>Style musical</label>
+                    <input type="text" id="edit_style" readonly>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>Année</label>
+                            <input type="number" id="edit_year" readonly>
+                        </div>
+                        <div>
+                            <label>Format</label>
+                            <input type="text" id="edit_format" readonly>
+                        </div>
+                    </div>
+            
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>État Vinyle</label>
+                            <select id="edit_vinyl_condition" disabled>
+                                <option value="M">Mint (M)</option>
+                                <option value="NM">Near Mint (NM)</option>
+                                <option value="VG+">Very Good Plus (VG+)</option>
+                                <option value="VG">Very Good (VG)</option>
+                                <option value="G">Good (G)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>État Pochette</label>
+                            <select id="edit_sleeve_condition" disabled>
+                                <option value="M">Mint (M)</option>
+                                <option value="NM">Near Mint (NM)</option>
+                                <option value="VG+">Very Good Plus (VG+)</option>
+                                <option value="VG">Very Good (VG)</option>
+                                <option value="G">Good (G)</option>
+                            </select>
+                        </div>
+                    </div>
+            
+                    <label>Pistes (Tracklist)</label>
+                    <textarea id="edit_tracks" rows="4" readonly placeholder="1. Intro..."></textarea>
+            
+                    <label>Notes personnelles</label>
+                    <textarea id="edit_notes" rows="2" readonly></textarea>
+            
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-delete" onclick="deleteAlbumFromModal()">🗑️</button>
+                        <button type="button" id="btn-toggle-edit" class="btn btn-edit" onclick="enableEditMode()">Modifier</button>
+                        <button type="submit" id="btn-save" class="btn btn-save">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAlbums = [];
+
+        async function loadCollection() {
+            const response = await fetch('/api/albums?wishlist=false');
+            currentAlbums = await response.json();
+            const grid = document.getElementById('vinyl-grid');
+            grid.innerHTML = currentAlbums.map(album => `
+                <div class="vinyl-card" onclick="openModal(${album.id})">
+                    <div class="cover-container">
+                        <img class="cover-img" src="${album.cover_url || 'https://via.placeholder.com/300?text=No+Cover'}" alt="Pochette">
+                    </div>
+                    <div class="vinyl-info">
+                        <p class="vinyl-artist">${album.artist}</p>
+                        <h3 class="vinyl-title">${album.title}</h3>
+                    </div>
+                </div>
+            `).join('');
+        }
+        // Fonction d'Affichage de la modale avec les infos de l'album
+        function openModal(id) {
+            const album = currentAlbums.find(a => a.id == id);
+            if (!album) {
+                console.error("Album introuvable pour l'ID :", id);
+                return;
+            }
+            
+            const fileInput = document.getElementById('edit_cover_file');
+            if (fileInput) fileInput.value = "";
+
+            const safeFill = (elementId, value) => {
+                const el = document.getElementById(elementId);
+                if (el) {
+                    el.value = value || '';
+                } else {
+                    // Affiche un avertissement discret si l'ID manque dans le HTML
+                    console.warn(`Attention : l'élément #${elementId} est absent du HTML.`);
+                }
+            };
+
+                    // Remplissage de tous les champs
+            safeFill('edit_id', album.id);
+            safeFill('edit_title', album.title);
+            safeFill('edit_artist', album.artist);
+            safeFill('edit_year', album.year);
+            safeFill('edit_format', album.format);
+            safeFill('edit_style', album.style);
+            safeFill('edit_tracks', album.tracklist);
+            safeFill('edit_catalog_id', album.catalog_id);
+            safeFill('edit_label', album.label);
+            safeFill('edit_vinyl_condition', album.vinyl_condition);
+            safeFill('edit_sleeve_condition', album.sleeve_condition);
+            safeFill('edit_notes', album.notes);
+
+            // Mise à jour de l'image
+            const img = document.getElementById('modalCover');
+            if (img) {
+                img.src = album.cover_url || 'https://via.placeholder.com/300?text=No+Cover';
+            }
+
+            // Verrouillage des champs et affichage
+            if (typeof disableEditMode === "function") {
+                disableEditMode();
+            }
+            
+            const modal = document.getElementById('albumModal');
+            if (modal) {
+                modal.style.display = "block";
+            } else {
+                console.error("Erreur : La div 'albumModal' n'a pas été trouvée.");
+            }
+        }
+
+        function enableEditMode() {
+            const inputs = document.querySelectorAll('#edit-form input, #edit-form textarea, #edit-form select');
+            inputs.forEach(input => {
+                input.readOnly = false;
+                input.disabled = false;
+            });
+
+            document.getElementById('edit_cover_file_container').style.display = 'block';
+            document.getElementById('btn-toggle-edit').style.display = 'none';
+            document.getElementById('btn-save').style.display = 'block';
+        }
+
+        function disableEditMode() {
+            const inputs = document.querySelectorAll('#edit-form input, #edit-form textarea, #edit-form select');
+            inputs.forEach(input => {
+                if (input.id !== 'edit_id') {
+                    // On utilise disabled pour les SELECT et readonly pour les autres
+                    if (input.tagName === 'SELECT') {
+                        input.disabled = true;
+                    } else {
+                        input.readOnly = true;
+                    }
+                }
+            });
+            
+            document.getElementById('btn-save').style.display = 'none';
+            document.getElementById('btn-toggle-edit').style.display = 'inline-block';
+            document.getElementById('edit_cover_file_container').style.display = 'none';
+        }
+            
+
+        function closeModal() {
+            document.getElementById('albumModal').style.display = 'none';
+            // Réinitialise le formulaire complet pour vider les résidus
+            document.getElementById('edit-form').reset(); 
+            disableEditMode();
+        }
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('edit_id').value;
+            const formData = new FormData();
+
+            formData.append('title', document.getElementById('edit_title').value);
+            formData.append('artist', document.getElementById('edit_artist').value);
+            formData.append('year', document.getElementById('edit_year').value);
+            formData.append('format', document.getElementById('edit_format').value);
+            formData.append('style', document.getElementById('edit_style').value);
+            formData.append('catalog_id', document.getElementById('edit_catalog_id').value);
+            formData.append('label', document.getElementById('edit_label').value);
+            formData.append('vinyl_condition', document.getElementById('edit_vinyl_condition').value);
+            formData.append('sleeve_condition', document.getElementById('edit_sleeve_condition').value);
+            formData.append('tracklist', document.getElementById('edit_tracks').value);
+            formData.append('notes', document.getElementById('edit_notes').value);
+
+            const fileField = document.getElementById('edit_cover_file');
+            if (fileField.files[0]) {
+                formData.append('cover_file', fileField.files[0]);
+            }
+
+            try {
+                const response = await fetch(`/api/albums/${id}`, { 
+                    method: 'PUT', 
+                    body: formData 
+                });
+
+                if (response.ok) {
+                    alert("Modifications enregistrées !");
+                    closeModal();
+                    loadCollection();
+                } else {
+                    const errorData = await response.json();
+                    alert("Erreur : " + errorData.error);
+                }
+            } catch (err) {
+                console.error("Erreur technique :", err);
+                alert("Impossible de joindre le serveur.");
+            }
+        });
+
+        async function deleteAlbumFromModal() {
+            const id = document.getElementById('edit_id').value;
+            if (confirm('Supprimer définitivement cet album ?')) {
+                await fetch(`/api/albums/${id}`, { method: 'DELETE' });
+                closeModal();
+                loadCollection();
+            }
+        }
+
+        function filterGrid() {
+            const query = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.vinyl-card').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(query) ? '' : 'none';
+            });
+        }
+
+        window.onclick = (e) => { if (e.target.className === 'modal') closeModal(); }
+        window.onload = loadCollection;
+    </script>
+</body>
+</html>
