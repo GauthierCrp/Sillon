@@ -276,20 +276,27 @@
         let currentAlbums = [];
 
         async function loadCollection() {
-            const response = await fetch('/api/albums?wishlist=false');
-            currentAlbums = await response.json();
-            const grid = document.getElementById('vinyl-grid');
-            grid.innerHTML = currentAlbums.map(album => `
-                <div class="vinyl-card" onclick="openModal(${album.id})">
-                    <div class="cover-container">
-                        <img class="cover-img" src="${album.cover_url || 'https://via.placeholder.com/300?text=No+Cover'}" alt="Pochette">
+            try {
+                const response = await fetch('/api/albums?wishlist=false');
+                currentAlbums = await response.json();
+                const grid = document.getElementById('vinyl-grid');
+                
+                grid.innerHTML = currentAlbums.map(album => `
+                    <div class="vinyl-card" onclick="openModal(${album.id})">
+                        <div class="cover-container">
+                            <img class="cover-img" 
+                                src="${album.cover_url || 'default-cover.png'}" 
+                                alt="Pochette de ${album.title}"
+                                loading="lazy"> </div>
+                        <div class="vinyl-info">
+                            <p class="vinyl-artist">${album.artist}</p>
+                            <h3 class="vinyl-title">${album.title}</h3>
+                        </div>
                     </div>
-                    <div class="vinyl-info">
-                        <p class="vinyl-artist">${album.artist}</p>
-                        <h3 class="vinyl-title">${album.title}</h3>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (err) {
+                console.error("Erreur lors du chargement :", err);
+            }
         }
         // Fonction d'Affichage de la modale avec les infos de l'album
         function openModal(id) {
