@@ -14,6 +14,9 @@
 * **🛡️ Base de Données Locale** : Vos données vous appartiennent, stockées en toute sécurité dans une base SQLite ultra-rapide.
 * 
 <img width="1200" height="720" alt="image" src="https://github.com/user-attachments/assets/63f7969f-3848-4f53-840b-cb8ab0b4db85" />
+
+<img width="1200" height="720" alt="image" src="https://github.com/user-attachments/assets/09f84fd3-3282-4f70-b33c-56ada26669d4" />
+
 ---
 
 ## 🚀 Guide de déploiement
