@@ -12,7 +12,8 @@
 * **🖼️ Optimisation des Médias** : Traitement automatique via **Sharp** pour des images légères, rapides à charger et parfaitement dimensionnées (600px).
 * **⚙️ Gestion des Paramètres** : Contrôle total sur votre Token API et vos données, avec masquage de sécurité pour vos clés privées.
 * **🛡️ Base de Données Locale** : Vos données vous appartiennent, stockées en toute sécurité dans une base SQLite ultra-rapide.
-
+* 
+<img width="1200" height="720" alt="image" src="https://github.com/user-attachments/assets/63f7969f-3848-4f53-840b-cb8ab0b4db85" />
 ---
 
 ## 🚀 Guide de déploiement
