@@ -251,7 +251,7 @@
             width: 400px;
             height: 400px;
             z-index: 10;
-            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
             transform-style: preserve-3d;
         }
 
@@ -264,26 +264,29 @@
         }
 
         #focus-disque {
+            background: #111; /* Couleur par défaut */
             position: absolute;
-            width: 385px;
-            height: 385px;
-            background: radial-gradient(circle, #333 0%, #111 100%);
+            width: 380px;
+            height: 380px;
             border-radius: 50%;
-            z-index: 5;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            transform: translateX(0) rotate(0deg); 
-        }
+            /* Effet de sillons */
+            background-image: repeating-radial-gradient(
+                circle,
+                rgba(0,0,0,0.1) 0px,
+                rgba(0,0,0,0.1) 1px,
+                transparent 2px
+            );
+        } 
 
         #focus-img-label {
-            width: 130px;
+            width: 130px; /* Taille du macaron central */
             height: 130px;
             border-radius: 50%;
-            border: 2px solid #000;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-            z-index: 6;
+            object-fit: cover;
+            z-index: 10;
         }
 
         /* --- ANIMATION ACTIVE --- */
@@ -293,6 +296,7 @@
 
         .focus-active #focus-disque {
             /* Translation droite + légère rotation */
+            transition: transform 0.8s;
             transform: translateX(150px) rotate(20deg);
         }
 
@@ -565,6 +569,9 @@
 
                     <label>Style musical</label>
                     <input type="text" id="edit_style" readonly>
+
+                    <label>Couleur du Vinyle</label>
+                   <input type="color" id="edit-vinyl-color" value="#111111">
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div>
@@ -605,6 +612,11 @@
             
                     <label>Notes personnelles</label>
                     <textarea id="edit_notes" rows="2" readonly></textarea>
+
+                    <div class="modal-field" id="edit_label_file_container">
+                        <label>Image du Macaron (Centre)</label>
+                        <input type="file" id="edit-label-file" accept="image/*">
+                    </div>
             
                     <div class="modal-actions">
                         <button type="button" class="btn btn-delete" onclick="deleteAlbumFromModal()">🗑️</button>
@@ -681,20 +693,22 @@
                 return;
             }
             
-            const fileInput = document.getElementById('edit_cover_file');
-            if (fileInput) fileInput.value = "";
+            // Reset des inputs fichiers
+            const coverInput = document.getElementById('edit_cover_file');
+            if (coverInput) coverInput.value = "";
+            const labelInput = document.getElementById('edit-label-file');
+            if (labelInput) labelInput.value = "";
 
             const safeFill = (elementId, value) => {
                 const el = document.getElementById(elementId);
                 if (el) {
                     el.value = value || '';
                 } else {
-                    // Affiche un avertissement discret si l'ID manque dans le HTML
                     console.warn(`Attention : l'élément #${elementId} est absent du HTML.`);
                 }
             };
 
-                    // Remplissage de tous les champs
+            // Remplissage des champs classiques
             safeFill('edit_id', album.id);
             safeFill('edit_title', album.title);
             safeFill('edit_artist', album.artist);
@@ -708,22 +722,27 @@
             safeFill('edit_sleeve_condition', album.sleeve_condition);
             safeFill('edit_notes', album.notes);
 
-            // Mise à jour de l'image
+            // --- AJOUTS : Couleur et Macaron ---
+            safeFill('edit-vinyl-color', album.vinyl_color || '#111111');
+
+            // Mise à jour de l'image de couverture
             const img = document.getElementById('modalCover');
             if (img) {
                 img.src = album.cover_url || 'https://via.placeholder.com/300?text=No+Cover';
             }
 
-            // Verrouillage des champs et affichage
-            if (typeof disableEditMode === "function") {
-                disableEditMode();
+            // (Optionnel) Mise à jour d'un aperçu pour le macaron si tu as une balise <img> dédiée
+            const labelImg = document.getElementById('modalLabelPreview');
+            if (labelImg) {
+                labelImg.src = album.label_url || album.cover_url || 'default-label.png';
             }
+
+            // Verrouillage des champs
+            disableEditMode();
             
             const modal = document.getElementById('albumModal');
             if (modal) {
                 modal.style.display = "flex";
-            } else {
-                console.error("Erreur : La div 'albumModal' n'a pas été trouvée.");
             }
         }
 
@@ -734,7 +753,13 @@
                 input.disabled = false;
             });
 
+            // Affichage des zones d'upload
             document.getElementById('edit_cover_file_container').style.display = 'flex';
+            
+            // On suppose que tu as mis l'input label dans un container similaire
+            const labelContainer = document.getElementById('edit_label_file_container');
+            if (labelContainer) labelContainer.style.display = 'flex';
+
             document.getElementById('btn-toggle-edit').style.display = 'none';
             document.getElementById('btn-save').style.display = 'flex';
         }
@@ -743,8 +768,8 @@
             const inputs = document.querySelectorAll('#edit-form input, #edit-form textarea, #edit-form select');
             inputs.forEach(input => {
                 if (input.id !== 'edit_id') {
-                    if (input.tagName === 'SELECT') {
-                        input.disabled = true;
+                    if (input.tagName === 'SELECT' || input.type === 'color') {
+                        input.disabled = true; // 'color' et 'select' nécessitent 'disabled'
                     } else {
                         input.readOnly = true;
                     }
@@ -752,9 +777,13 @@
             });
             
             document.getElementById('btn-save').style.display = 'none';
-            document.getElementById('btn-toggle-edit').style.display = 'inline-block';
-            document.getElementById('edit_cover_file_container').style.display = 'none';
-        }
+                document.getElementById('btn-toggle-edit').style.display = 'inline-block';
+                
+                // Cacher les zones d'upload
+                document.getElementById('edit_cover_file_container').style.display = 'none';
+                const labelContainer = document.getElementById('edit_label_file_container');
+                if (labelContainer) labelContainer.style.display = 'none';
+            }
             
 
         function closeModal() {
@@ -781,6 +810,11 @@
             formData.append('sleeve_condition', document.getElementById('edit_sleeve_condition').value);
             formData.append('tracklist', document.getElementById('edit_tracks').value);
             formData.append('notes', document.getElementById('edit_notes').value);
+            formData.append('vinyl_color', document.getElementById('edit-vinyl-color').value);
+
+            const labelFile = document.getElementById('edit-label-file').files[0];
+            if (labelFile) formData.append('label_file', labelFile);
+
 
             const fileField = document.getElementById('edit_cover_file');
             if (fileField.files[0]) {
@@ -843,37 +877,43 @@
         function loadVinylSequence() {
             const focus = document.getElementById('focus-overlay');
             const container = document.getElementById('focus-container');
+            const album = currentAlbums[focusIndex]; // Déclaré UNE seule fois
             
             // 1. Reset immédiat (sans transition)
             focus.classList.add('is-switching');
             focus.classList.remove('focus-active');
             container.classList.remove('visible');
 
-            // 2. Mise à jour des données (Source des images)
-            const album = currentAlbums[focusIndex];
-            document.getElementById('focus-img-cover').src = album.cover_url || 'default-cover.png';
-            document.getElementById('focus-img-label').src = album.cover_url || 'default-cover.png';
-            document.getElementById('focus-title').innerText = album.title;
-            document.getElementById('focus-artist').innerText = album.artist;
-
+            // 2. Récupération des éléments du DOM
             const imgPochette = document.getElementById('focus-img-cover');
             const imgLabel = document.getElementById('focus-img-label');
+            imgLabel.src = album.label_url || '/img/default-label.png';
+            const disque = document.getElementById('focus-disque');
 
-            // 3. Attendre que les images soient prêtes
+            // 3. Mise à jour des données
+            imgPochette.src = album.cover_url || 'default-cover.png';
+            imgLabel.src = album.label_url || '/img/default-label.png'; // Correction ici
+            
+            document.getElementById('focus-title').innerText = album.title;
+            document.getElementById('focus-artist').innerText = album.artist;
+            
+            disque.style.backgroundColor = album.vinyl_color || '#111111';
+
+            // 4. Attendre que les images soient prêtes
             Promise.all([
                 new Promise(res => imgPochette.complete ? res() : imgPochette.onload = res),
                 new Promise(res => imgLabel.complete ? res() : imgLabel.onload = res)
             ]).then(() => {
-                // Retirer le mode reset pour autoriser les transitions futures
+                // Retirer le mode reset
                 focus.classList.remove('is-switching');
                 
-                // 4. Afficher l'album (il apparaît en fondu grâce au CSS visible)
+                // 5. Afficher l'album
                 container.classList.add('visible');
                 
-                // 5. Attendre 1 seconde avec l'album fermé
+                // 6. Attendre 1 seconde avec l'album fermé
                 setTimeout(() => {
-                    // 6. Déclencher l'animation (le disque sort)
-                    void focus.offsetWidth; // Force le navigateur à rafraîchir
+                    // 7. Déclencher l'animation (le disque sort)
+                    void focus.offsetWidth; 
                     focus.classList.add('focus-active');
                 }, 1000);
             });

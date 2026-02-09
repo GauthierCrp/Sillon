@@ -36,7 +36,9 @@ db.exec(`
     notes TEXT,
     tracklist TEXT,
     cover_url TEXT,
-    is_wishlist INTEGER DEFAULT 0
+    is_wishlist INTEGER DEFAULT 0,
+    label_url TEXT,
+    vinyl_color TEXT DEFAULT '#111'
   )
 `);
 
@@ -59,6 +61,10 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const upload = multer({ storage: storage });
+const uploadFields = upload.fields([
+    { name: 'cover_file', maxCount: 1 },
+    { name: 'label_file', maxCount: 1 }
+]);
 
 // --- 3. MIDDLEWARES DE BASE ---
 app.use(express.json());
@@ -151,85 +157,106 @@ app.get('/api/albums', isAuthenticated, (req, res) => {
     res.json(albums);
 });
 
-app.post('/api/albums', isAuthenticated, upload.single('cover_file'), async (req, res) => {
+app.post('/api/albums', isAuthenticated, uploadFields, async (req, res) => {
     try {
-        const { catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes } = req.body;
+        const { catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, vinyl_color } = req.body;
         
         let cover_url = null;
+        let label_url = null;
 
-        if (req.file) {
-            // On définit le nom du fichier optimisé
-            const filename = 'opti-' + req.file.filename;
+        // Fonction utilitaire pour optimiser et sauvegarder
+        const processImage = async (file, prefix) => {
+            const filename = `${prefix}-${Date.now()}.jpg`;
             const outputPath = path.join(__dirname, 'public/uploads', filename);
-
-            // Traitement avec Sharp
-            await sharp(req.file.path)
-                .resize(600, 600, { // Redimensionne à 600x600 max
-                    fit: 'inside',
-                    withoutEnlargement: true // N'agrandit pas si l'image est plus petite
-                })
-                .jpeg({ quality: 80 }) // Compresse à 80% (excellent rapport poids/qualité)
+            await sharp(file.path)
+                .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 80 })
                 .toFile(outputPath);
+            fs.unlinkSync(file.path);
+            return `/uploads/${filename}`;
+        };
 
-            // On supprime le fichier original lourd (celui uploadé par multer)
-            fs.unlinkSync(req.file.path);
-
-            // On enregistre le chemin du fichier optimisé
-            cover_url = `/uploads/${filename}`;
+        if (req.files['cover_file']) {
+            cover_url = await processImage(req.files['cover_file'][0], 'opti-cover');
+        }
+        if (req.files['label_file']) {
+            label_url = await processImage(req.files['label_file'][0], 'opti-label');
         }
 
         const insert = db.prepare(`
-            INSERT INTO albums (catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO albums (catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url, label_url, vinyl_color)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         
-        insert.run(catalog_id, artist, title, label, format, parseInt(year) || null, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url);
+        insert.run(catalog_id, artist, title, label, format, parseInt(year) || null, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url, label_url, vinyl_color || '#111111');
         
-        res.status(201).json({ message: "Album ajouté et image optimisée !" });
-
+        res.status(201).json({ message: "Album ajouté avec succès !" });
     } catch (err) { 
-        console.error(err);
-        // Si le traitement échoue mais que multer a quand même écrit le fichier, on nettoie
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: err.message }); 
     }
 });
 
-app.put('/api/albums/:id', isAuthenticated, upload.single('cover_file'), async (req, res) => {
+app.put('/api/albums/:id', isAuthenticated, upload.fields([
+    { name: 'cover_file', maxCount: 1 },
+    { name: 'label_file', maxCount: 1 }
+]), async (req, res) => {
     const albumId = req.params.id;
-    const { title, artist, year, format, style, catalog_id, label, vinyl_condition, sleeve_condition, tracklist, notes } = req.body;
+    const { 
+        title, artist, year, format, style, catalog_id, label, 
+        vinyl_condition, sleeve_condition, tracklist, notes, vinyl_color 
+    } = req.body;
     
     try {
-        // 1. On récupère les infos de l'album actuel pour connaître l'ancienne image
-        const oldAlbum = db.prepare('SELECT cover_url FROM albums WHERE id = ?').get(albumId);
+        // 1. On récupère les anciennes infos pour gérer la suppression des fichiers remplacés
+        const oldAlbum = db.prepare('SELECT cover_url, label_url FROM albums WHERE id = ?').get(albumId);
         
-        let query = `UPDATE albums SET title=?, artist=?, year=?, format=?, style=?, catalog_id=?, label=?, vinyl_condition=?, sleeve_condition=?, tracklist=?, notes=?`;
-        let params = [title, artist, year, format, style, catalog_id, label, vinyl_condition, sleeve_condition, tracklist, notes];
+        // Base de la requête
+        let query = `UPDATE albums SET title=?, artist=?, year=?, format=?, style=?, catalog_id=?, label=?, vinyl_condition=?, sleeve_condition=?, tracklist=?, notes=?, vinyl_color=?`;
+        let params = [title, artist, year, format, style, catalog_id, label, vinyl_condition, sleeve_condition, tracklist, notes, vinyl_color];
 
-        // 2. Si une nouvelle image a été sélectionnée
-        if (req.file) {
-            const filename = 'opti-' + req.file.filename;
+        // 2. Gestion de la POCHETTE (cover_file)
+        if (req.files && req.files['cover_file']) {
+            const file = req.files['cover_file'][0];
+            const filename = `opti-cover-${Date.now()}.jpg`;
             const outputPath = path.join(__dirname, 'public/uploads', filename);
 
-            // Traitement Sharp (Redimensionnement et compression)
-            await sharp(req.file.path)
-                .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
+            await sharp(file.path)
+                .resize(600, 600, { fit: 'cover' })
                 .jpeg({ quality: 80 })
                 .toFile(outputPath);
 
-            // On supprime le fichier original lourd que Multer vient de créer
-            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
 
-            // On ajoute le nouveau chemin à la requête SQL
             query += `, cover_url=?`;
             params.push(`/uploads/${filename}`);
 
-            // 3. Suppression de l'ancienne image de la collection (pour ne pas saturer le serveur)
+            // Supprimer l'ancienne cover physique
             if (oldAlbum && oldAlbum.cover_url) {
-                const oldFilePath = path.join(__dirname, 'public', oldAlbum.cover_url);
-                if (fs.existsSync(oldFilePath)) {
-                    fs.unlinkSync(oldFilePath);
-                }
+                const oldPath = path.join(__dirname, 'public', oldAlbum.cover_url);
+                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            }
+        }
+
+        // 3. Gestion du MACARON (label_file)
+        if (req.files && req.files['label_file']) {
+            const file = req.files['label_file'][0];
+            const filename = `opti-label-${Date.now()}.jpg`;
+            const outputPath = path.join(__dirname, 'public/uploads', filename);
+
+            await sharp(file.path)
+                .resize(400, 400, { fit: 'cover' })
+                .jpeg({ quality: 80 })
+                .toFile(outputPath);
+
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+
+            query += `, label_url=?`;
+            params.push(`/uploads/${filename}`);
+
+            // Supprimer l'ancien label physique
+            if (oldAlbum && oldAlbum.label_url) {
+                const oldPath = path.join(__dirname, 'public', oldAlbum.label_url);
+                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
             }
         }
 
@@ -237,17 +264,33 @@ app.put('/api/albums/:id', isAuthenticated, upload.single('cover_file'), async (
         params.push(albumId);
 
         db.prepare(query).run(...params);
-        res.json({ success: true, message: "Album mis à jour avec image optimisée" });
+        res.json({ success: true, message: "Album mis à jour avec succès" });
 
     } catch (err) {
         console.error("Erreur lors de la mise à jour :", err);
-        // En cas d'erreur, on nettoie le fichier temporaire si multer l'a créé
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        // Nettoyage en cas d'erreur
+        if (req.files) {
+            Object.values(req.files).forEach(fileArray => {
+                fileArray.forEach(file => {
+                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                });
+            });
+        }
         res.status(500).json({ error: err.message });
     }
 });
 
 app.delete('/api/albums/:id', isAuthenticated, (req, res) => {
+    const album = db.prepare('SELECT cover_url, label_url FROM albums WHERE id = ?').get(req.params.id);
+    
+    // Suppression des fichiers physiques
+    [album.cover_url, album.label_url].forEach(url => {
+        if (url) {
+            const filePath = path.join(__dirname, 'public', url);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+    });
+
     db.prepare('DELETE FROM albums WHERE id = ?').run(req.params.id);
     res.json({ success: true });
 });
