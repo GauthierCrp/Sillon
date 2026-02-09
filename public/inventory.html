@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>MyVinyl - Ma Collection</title>
     <style>
@@ -19,7 +20,6 @@
             padding: 20px;
             min-height: 100vh;
             color: #eee;
-            /* Fond cohérent avec l'index */
             background: 
                 radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
                 linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
@@ -33,26 +33,81 @@
     
         .container { max-width: 1200px; margin: 0 auto; }
         
-        .header-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 30px; 
-            padding: 10px;
+        .header-bar {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; /* 3 colonnes : la centrale s'adapte à la recherche */
+            align-items: center; /* Aligne verticalement tous les éléments sur le même axe */
+            margin-bottom: 60px;
+            padding: 20px;
+            min-height: 60px;
         }
-    
+
         #search { 
-            padding: 12px 20px; 
-            width: 300px; 
+            grid-column: 2; /* Force la barre de recherche dans la colonne centrale */
+            height: 46px; 
+            width: 600px; 
+            padding: 0 20px; 
             border-radius: 25px; 
-            border: 1px solid var(--glass-border); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
             background: var(--glass-bg);
             color: white;
             backdrop-filter: blur(10px);
             outline: none;
+            box-sizing: border-box; 
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            margin: 0 auto; /* Centrage horizontal parfait */
         }
-    
-        #search::placeholder { color: #aaa; }
+
+        .btn-back {
+            grid-column: 1; /* Place le bouton dans la première colonne (à gauche) */
+            justify-self: start; /* Aligne le bouton au début de sa colonne */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center; 
+            height: 46px; /* Strictement la même hauteur */
+            padding: 0 25px; 
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            font-weight: 700;
+            font-size: 16px; 
+            transition: 0.3s;
+            box-sizing: border-box; 
+            font-family: 'Nunito', sans-serif;
+            gap: 10px;
+            margin-left: -200px; /* Ajustez ce chiffre selon vos goûts */
+        }
+
+        .btn-back:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .btn-view {
+            grid-column: 3;
+            justify-self: end; /* Aligne à droite de la colonne */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 46px;
+            padding: 0 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            transition: 0.3s;
+            margin-right: -200px; /* Ajustez ce chiffre selon vos goûts */
+        }
+
+        .btn-view:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
     
         /* La Grille */
         .vinyl-grid { 
@@ -90,16 +145,30 @@
     
         /* Fenêtre Modale */
         .modal {
-            display: none; position: fixed; z-index: 3000; 
-            left: 0; top: 0; width: 100%; height: 100%; 
-            background-color: rgba(0, 0, 0, 0.20); backdrop-filter: blur(8px);
+            display: none; 
+            position: fixed; 
+            z-index: 3000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.85); 
+            backdrop-filter: blur(8px);
+            align-items: center; 
+            justify-content: center;
         }
     
         .modal-content {
             background: rgba(30, 30, 30, 0.95);
-            margin: 5% auto; padding: 30px;
-            border-radius: 20px; width: 90%; max-width: 800px;
-            display: flex; gap: 30px; position: relative;
+            padding: 30px;
+            border-radius: 20px; 
+            width: 90%; 
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            display: flex; 
+            gap: 30px; 
+            position: relative;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
@@ -141,61 +210,7 @@
             border-radius: 8px; 
             display: none;
         }
-
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            text-decoration: none;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 30px;
-            backdrop-filter: blur(10px);
-            font-weight: 700;
-            transition: 0.3s;
-            align-self: flex-start;
-        }
-
-        .btn-back:hover { background: rgba(255, 255, 255, 0.2); }
-
-        .logout-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: #ff6b6b; /* Un rouge doux pour indiquer la sortie */
-            text-decoration: none;
-            font-family: 'Nunito', sans-serif;
-            font-weight: 700;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            z-index: 1000; /* Pour qu'il reste au-dessus de tout */
-        }
-
-        .logout-btn:hover {
-            background: rgba(255, 60, 60, 0.2);
-            border-color: rgba(255, 107, 107, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .logout-btn svg {
-            transition: transform 0.3s ease;
-        }
-
-        .logout-btn:hover svg {
-            transform: translateX(3px);
-        }
         
-
         .nav-btn-focus:hover {
             opacity: 1;
             transform: scale(1.2);
@@ -212,6 +227,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0; 
+            transition: opacity 0.5s ease;
+        }
+
+        #focus-container.visible {
+            opacity: 1;
+        }
+
+        #focus-overlay:not(.focus-active) #focus-pochette,
+        #focus-overlay:not(.focus-active) #focus-disque {
+            transform: none !important;
+            animation: none !important;
+        }
+
+        .is-switching #focus-pochette,
+        .is-switching #focus-disque {
+            transition: none !important;
         }
 
         #focus-pochette {
@@ -241,11 +273,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            
-            /* Transition cruciale pour le retour */
             transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            
-            /* État par défaut : au centre (caché) */
             transform: translateX(0) rotate(0deg); 
         }
 
@@ -290,24 +318,114 @@
         }
         .nav-btn-focus:hover { opacity: 1; transform: scale(1.1); }
 
+        /*Adaptation Smartphone*/
+        
+            @media (max-width: 600px) {
+        /* 1. HEADER : Boutons plus petits et alignés, recherche en dessous */
+        .header-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Accueil et Focus côte à côte */
+            gap: 10px;
+            margin-bottom: 20px;
+            height: auto;
+        }
+
+        .btn-back, .btn-view {
+            height: 36px; /* Taille réduite */
+            font-size: 13px; /* Texte plus discret */
+            padding: 0 10px;
+            width: auto;
+            justify-self: stretch; /* Les boutons occupent leur moitié de colonne */
+            border-radius: 18px; /* Arrondi ajusté à la taille */
+        }
+
+        #search {
+            grid-column: span 2; /* La barre de recherche prend toute la largeur */
+            height: 40px;
+            font-size: 14px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        /* 2. GRILLE : 2 colonnes qui s'adaptent à l'écran */
+        .vinyl-grid {
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px;
+            padding: 5px;
+        }
+
+        /* 3. MODE FOCUS : Optimisation de l'espace et du mouvement */
+        #focus-container {
+            width: 100%;
+            height: 300px;
+            overflow: hidden; /* Sécurité pour éviter le scroll horizontal */
+            margin: 0 auto;
+        }
+
+        #focus-pochette {
+            width: 200px; /* Légèrement réduit pour laisser de la place au disque */
+            height: 200px;
+        }
+
+        #focus-disque {
+            width: 190px;
+            height: 190px;
+        }
+
+        /* Animation Mobile : Translation recalibrée pour ne pas sortir de l'écran */
+        .focus-active #focus-pochette {
+            transform: rotateY(-5deg) translateX(-40px) scale(0.85);
+        }
+
+        .focus-active #focus-disque {
+            transform: translateX(75px) rotate(20deg) scale(0.85);
+        }
+
+        /* Ajustement de la rotation infinie sur Mobile */
+        @keyframes vinylRotation {
+            from { transform: translateX(75px) rotate(20deg) scale(0.85); }
+            to { transform: translateX(75px) rotate(380deg) scale(0.85); }
+        }
+
+        /* 4. TEXTES ET BOUTONS DE NAVIGATION FOCUS */
+        #focus-title {
+            font-size: 1.4rem;
+            margin-top: 10px;
+        }
+
+        #focus-artist {
+            font-size: 1rem;
+        }
+
+        .nav-btn-focus {
+            font-size: 3rem;
+            padding: 0 5px;
+        }
+
+        /* 5. MODALE : Pleine largeur sur mobile */
+        .modal-content {
+            flex-direction: column;
+            width: 95%;
+            margin: 2% auto;
+            padding: 15px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+}
 
     </style>
 </head>
 <body>
-    <a href="/logout" class="logout-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-        Déconnexion
-    </a>
     <div class="container">
         <div class="header-bar">
-            <a href="index.html" class="btn-back" style="color: #eee; font-weight: bold;">← Accueil</a>
-            <input type="text" id="search" placeholder="Rechercher..." onkeyup="filterGrid()">
+            <a href="index.html" class="btn-back">← Accueil</a>
+            
+            <input type="text" id="search" placeholder="Rechercher un album, un artiste..." oninput="filterAlbums()">
+            
+            <button id="view-toggle" class="btn-view" onclick="toggleView()">
+                <span id="toggle-label">Mode Focus</span>
+            </button>
         </div>
-        <div class="view-toggle" style="margin-bottom: 20px;">
-            <button onclick="switchView('grid')" class="btn-back" style="color:#eee; border:1px solid rgba(255,255,255,0.2); cursor:pointer; padding:5px 15px; border-radius:20px;">Vue Grille</button>
-            <button onclick="switchView('focus')" class="btn-back" style="color:#eee; border:1px solid rgba(255,255,255,0.2); cursor:pointer; padding:5px 15px; border-radius:20px;">Vue Focus</button>
-        </div>
-
         <div id="vinyl-grid" class="vinyl-grid"></div>
     </div>
 
@@ -504,7 +622,7 @@
             
             const modal = document.getElementById('albumModal');
             if (modal) {
-                modal.style.display = "block";
+                modal.style.display = "flex";
             } else {
                 console.error("Erreur : La div 'albumModal' n'a pas été trouvée.");
             }
@@ -517,9 +635,9 @@
                 input.disabled = false;
             });
 
-            document.getElementById('edit_cover_file_container').style.display = 'block';
+            document.getElementById('edit_cover_file_container').style.display = 'flex';
             document.getElementById('btn-toggle-edit').style.display = 'none';
-            document.getElementById('btn-save').style.display = 'block';
+            document.getElementById('btn-save').style.display = 'flex';
         }
 
         function disableEditMode() {
@@ -611,62 +729,91 @@
 
         let focusIndex = 0;
 
-        function switchView(mode) {
-            const overlay = document.getElementById('focus-overlay');
-            const container = document.querySelector('.container');
-            
-            if (mode === 'focus') {
-                if (currentAlbums.length === 0) return;
-                // On cherche l'index du premier vinyle visible
-                focusIndex = 0;
-                overlay.style.display = 'flex';
-                container.style.opacity = '0'; // Transition douce
-                setTimeout(() => { container.style.display = 'none'; }, 300);
-                updateFocusContent();
+        function toggleView() {
+            const grid = document.getElementById('vinyl-grid');
+            const isGridVisible = window.getComputedStyle(grid).display !== 'none';
+
+            if (isGridVisible) {
+                switchView('focus');
             } else {
-                overlay.classList.remove('focus-active');
-                overlay.style.display = 'none';
-                container.style.display = 'block';
-                setTimeout(() => { container.style.opacity = '1'; }, 10);
+                switchView('grid');
             }
         }
 
-        function updateFocusContent() {
+
+        function loadVinylSequence() {
+            const focus = document.getElementById('focus-overlay');
+            const container = document.getElementById('focus-container');
+            
+            // 1. Reset immédiat (sans transition)
+            focus.classList.add('is-switching');
+            focus.classList.remove('focus-active');
+            container.classList.remove('visible');
+
+            // 2. Mise à jour des données (Source des images)
             const album = currentAlbums[focusIndex];
-            const overlay = document.getElementById('focus-overlay');
-            const disque = document.getElementById('focus-disque');
-            
-            // 1. On retire la classe active : le disque rentre et la pochette se remet de face
-            overlay.classList.remove('focus-active');
-            
-            // On attend que l'animation de "rentrée" soit finie (800ms dans ton CSS)
-            setTimeout(() => {
-                document.getElementById('focus-img-cover').src = album.cover_url || 'default-cover.png';
-                document.getElementById('focus-img-label').src = album.cover_url || 'default-cover.png';
-                document.getElementById('focus-title').innerText = album.title;
-                document.getElementById('focus-artist').innerText = album.artist;
+            document.getElementById('focus-img-cover').src = album.cover_url || 'default-cover.png';
+            document.getElementById('focus-img-label').src = album.cover_url || 'default-cover.png';
+            document.getElementById('focus-title').innerText = album.title;
+            document.getElementById('focus-artist').innerText = album.artist;
+
+            const imgPochette = document.getElementById('focus-img-cover');
+            const imgLabel = document.getElementById('focus-img-label');
+
+            // 3. Attendre que les images soient prêtes
+            Promise.all([
+                new Promise(res => imgPochette.complete ? res() : imgPochette.onload = res),
+                new Promise(res => imgLabel.complete ? res() : imgLabel.onload = res)
+            ]).then(() => {
+                // Retirer le mode reset pour autoriser les transitions futures
+                focus.classList.remove('is-switching');
                 
+                // 4. Afficher l'album (il apparaît en fondu grâce au CSS visible)
+                container.classList.add('visible');
+                
+                // 5. Attendre 1 seconde avec l'album fermé
                 setTimeout(() => {
-                    overlay.classList.add('focus-active');
-                }, 50);
-                
-            }, 800);
+                    // 6. Déclencher l'animation (le disque sort)
+                    void focus.offsetWidth; // Force le navigateur à rafraîchir
+                    focus.classList.add('focus-active');
+                }, 1000);
+            });
         }
 
-        function nextVinyl() {
-            focusIndex = (focusIndex + 1) % currentAlbums.length;
-            updateFocusContent();
-        }
+            // NAVIGATION
+            function switchView(view) {
+                const grid = document.getElementById('vinyl-grid');
+                const focus = document.getElementById('focus-overlay');
+                const label = document.getElementById('toggle-label');
 
-        function prevVinyl() {
-            focusIndex = (focusIndex - 1 + currentAlbums.length) % currentAlbums.length;
-            updateFocusContent();
-        }
+                if (view === 'focus') {
+                    grid.style.display = 'none';
+                    focus.style.display = 'flex';
+                    label.innerText = "Mode Grille";
+                    loadVinylSequence();
+                } else {
+                    grid.style.display = 'grid';
+                    focus.style.display = 'none';
+                    focus.classList.remove('focus-active');
+                    label.innerText = "Mode Focus";
+                }
+            }
 
-        function openCurrentInModal() {
-            const album = currentAlbums[focusIndex];
-            openModal(album.id);
-        }
+            function nextVinyl() {
+                focusIndex = (focusIndex + 1) % currentAlbums.length;
+                loadVinylSequence();
+            }
+
+            function prevVinyl() {
+                focusIndex = (focusIndex - 1 + currentAlbums.length) % currentAlbums.length;
+                loadVinylSequence();
+            }
+
+            function openCurrentInModal() {
+                const album = currentAlbums[focusIndex];
+                openModal(album.id);
+            }
+
 
         // Support des flèches du clavier
         window.addEventListener('keydown', (e) => {
@@ -676,7 +823,24 @@
                 if (e.key === 'Escape') switchView('grid');
             }
         });
-        
+        let touchstartX = 0;
+        let touchendX = 0;
+
+        const focusZone = document.getElementById('focus-overlay');
+
+        focusZone.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        });
+
+        focusZone.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleGesture();
+        });
+
+        function handleGesture() {
+            if (touchendX < touchstartX - 50) nextVinyl(); // Swipe gauche -> Suivant
+            if (touchendX > touchstartX + 50) prevVinyl(); // Swipe droite -> Précédent
+        }
     </script>
 </body>
 </html>
