@@ -136,6 +136,24 @@
             border-radius: 8px; 
             display: none;
         }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            font-weight: 700;
+            transition: 0.3s;
+            align-self: flex-start;
+        }
+
+        .btn-back:hover { background: rgba(255, 255, 255, 0.2); }
+
         .logout-btn {
             position: fixed;
             top: 20px;
@@ -180,7 +198,7 @@
     </a>
     <div class="container">
         <div class="header-bar">
-            <a href="index.html" style="text-decoration:none; color:var(--primary); font-weight:bold;">← Dashboard</a>
+            <a href="index.html" class="btn-back" style="color: #eee; font-weight: bold;">← Accueil</a>
             <input type="text" id="search" placeholder="Rechercher..." onkeyup="filterGrid()">
         </div>
         <div id="vinyl-grid" class="vinyl-grid"></div>
@@ -193,7 +211,7 @@
             <div class="modal-left">
                 <img id="modalCover" class="modal-cover" src="" alt="Pochette">
                 <div id="edit_cover_file_container">
-                    <label style="font-size:0.8em;">Changer l'image :</label>
+                    <label style="font-size: 0.8rem;">Changer l'image :</label>
                     <input type="file" id="edit_cover_file" accept="image/*">
                 </div>
             </div>
