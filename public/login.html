@@ -6,7 +6,8 @@
     <title>MyVinyl - Connexion</title>
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
+            /* Application de Nunito sur tout le corps */
+            font-family: 'Nunito', sans-serif;
             margin: 0;
             height: 100vh;
             display: flex;
@@ -28,12 +29,31 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        h2 { 
-            font-family: 'Nunito', sans-serif; /* Application de la police */
-            font-weight: 800;                 /* Très gras pour le côté premium */
-            margin-bottom: 30px; 
-            letter-spacing: 2px;
-            text-transform: uppercase;        /* Pour un look logo */
+        .logo-container {
+            margin-bottom: 10px;
+        }
+
+        .vinyl-logo {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
+            animation: spin 6s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        h2 {
+            font-weight: 800;
+            font-size: 26px;
+            margin: 5px 0 30px 0;
+            letter-spacing: 3px;
+            color: #fff;
+            text-transform: uppercase;
         }
 
         input {
@@ -45,53 +65,44 @@
             border-radius: 8px;
             color: white;
             box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
         }
 
         button {
-            width: 100%;
-            padding: 12px;
-            background: #4b1947;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
+            width: 100%; /* Harmonisation de la largeur */
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 50px;
             cursor: pointer;
-            margin-top: 20px;
-            transition: 0.3s;
-        }
-
-        button:hover { background: #39437e; }
-        .error { color: #ff6b6b; margin-top: 15px; display: none; }
-        .logo-container {
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .vinyl-logo {
-            width: 100px; /* Ajuste la taille selon ton fichier */
-            height: 100px;
-            object-fit: contain;
-            border-radius: 50%; /* Force la forme circulaire si besoin */
-            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
-            animation: spin 6s linear infinite; /* Rotation un peu plus lente pour le réalisme */
-        }
-
-        /* L'animation de rotation */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* On peaufine le titre Nunito juste en dessous */
-        h2 {
-            font-family: 'Nunito', sans-serif;
-            font-weight: 800;
-            font-size: 26px;
-            margin-top: 5px;
-            letter-spacing: 3px;
-            color: #fff;
+            border: 0;
+            background-color: white;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
+            font-size: 14px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            transition: all 0.5s ease;
+        }
+
+        button:hover {
+            letter-spacing: 3px;
+            background-color: #5d18dc;
+            color: white;
+            box-shadow: 0px 7px 29px rgba(93, 24, 220, 0.5);
+        }
+
+        /* CORRECTION DU MESSAGE D'ERREUR */
+        .error-message {
+            display: none; /* Masqué par défaut */
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 20px;
+            color: #ff6b6b; /* Rouge doux pour l'erreur */
+            background: rgba(255, 107, 107, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 107, 107, 0.2);
         }
     </style>
 </head>
@@ -106,28 +117,38 @@
         <form id="login-form">
             <input type="text" id="username" placeholder="Utilisateur" required>
             <input type="password" id="password" placeholder="Mot de passe" required>
-            <button type="submit">Se connecter</button>
-            <div id="error-msg" class="error">Identifiants invalides</div>
+            <button type="submit">Connexion</button>              
+            <div id="error-msg" class="error-message">Identifiants invalides</div>
         </form>
     </div>
-
 
     <script>
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-msg');
 
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
+            // On cache le message d'erreur au début de chaque tentative
+            errorDiv.style.display = 'none';
 
-            if (response.ok) {
-                window.location.href = 'index.html';
-            } else {
-                document.getElementById('error-msg').style.display = 'block';
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    window.location.href = 'index.html';
+                } else {
+                    // Affichage uniquement en cas d'échec
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error("Erreur de connexion:", err);
+                errorDiv.innerText = "Erreur de connexion au serveur";
+                errorDiv.style.display = 'block';
             }
         });
     </script>
