@@ -6,7 +6,6 @@ const fs = require('fs');
 const sharp = require('sharp');
 const axios = require('axios');
 const session = require('express-session');
-
 const app = express();
 const port = 3002;
 
@@ -91,7 +90,7 @@ const isAuthenticated = (req, res, next) => {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     // Identifiants à personnaliser
-    if (username === 'admin' && password === 'vinyl2024') {
+    if (username === 'admin' && password === 'admin') {
         req.session.isLoggedIn = true;
         res.json({ success: true });
     } else {
@@ -288,15 +287,13 @@ app.post('/api/settings/reset', isAuthenticated, (req, res) => {
 function normalizeSearchTerm(term) {
     if (!term) return "";
     return term
-        .normalize("NFD") // Sépare les accents des lettres
-        .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
-        .replace(/[^\w\s]/gi, ' ') // Remplace tout ce qui n'est pas lettre/chiffre (ex: +, &, #) par un espace
-        .replace(/\s+/g, ' ') // Supprime les doubles espaces
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .trim();
 }
 
 app.get('/api/settings/scan-covers', isAuthenticated, async (req, res) => {
-    // Configuration Headers pour le streaming
+    // Configuration pour le streaming vers le navigateur
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -305,66 +302,102 @@ app.get('/api/settings/scan-covers', isAuthenticated, async (req, res) => {
     const DISCOGS_TOKEN = row ? row.value : null;
 
     if (!DISCOGS_TOKEN || DISCOGS_TOKEN.trim() === "") {
-        res.write(`data: ${JSON.stringify({ error: "Token Discogs manquant" })}\n\n`);
+        res.write(`data: ${JSON.stringify({ error: "Token Discogs manquant dans les réglages" })}\n\n`);
         return res.end();
     }
 
-    const albums = db.prepare("SELECT id, artist, title FROM albums WHERE cover_url IS NULL OR cover_url = ''").all();
+    // Sélection des albums qui n'ont pas encore de pochette
+    const albums = db.prepare("SELECT id, artist, title FROM albums WHERE cover_url IS NULL OR cover_url = '' OR cover_url = 'undefined'").all();
     const total = albums.length;
     let count = 0;
-    let processed = 0;
 
-    for (const album of albums) {
-        processed++;
-        try {
-            const cleanArtist = normalizeSearchTerm(album.artist);
-            const cleanTitle = normalizeSearchTerm(album.title);
+    console.log(`--- Lancement du scan pour ${total} albums ---`);
 
-            console.log(`🔍 Recherche optimisée : "${cleanArtist}" - "${cleanTitle}"`);
+    for (let i = 0; i < albums.length; i++) {
+        const album = albums[i];
+        let success = false;
+        let attempts = 0;
 
-            const searchResponse = await axios.get(`https://api.discogs.com/database/search`, {
-                params: {
-                    artist: cleanArtist,
-                    release_title: cleanTitle,
-                    type: 'release',
-                    token: DISCOGS_TOKEN
-                },
-                headers: { 'User-Agent': 'SillonApp/1.0' }
-            });
-
-            const results = searchResponse.data.results;
-
-            if (results && results.length > 0 && results[0].cover_image) {
-                const imgUrl = results[0].cover_image;
-                const imageResponse = await axios.get(imgUrl, {
-                    responseType: 'arraybuffer',
-                    headers: { 'User-Agent': 'SillonApp/1.0', 'Authorization': `Discogs token=${DISCOGS_TOKEN}` }
+        while (!success && attempts < 2) {
+            try {
+                // Recherche sur Discogs
+                const searchResponse = await axios.get(`https://api.discogs.com/database/search`, {
+                    params: {
+                        q: `${album.artist} ${album.title}`,
+                        type: 'release',
+                        token: DISCOGS_TOKEN.trim()
+                    },
+                    headers: {
+                        // User-Agent de navigateur réel pour éviter le blocage 403
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+                    }
                 });
 
-                const filename = `discogs-${album.id}.jpg`;
-                const outputPath = path.join(__dirname, 'public', 'uploads', filename);
+                const results = searchResponse.data.results;
 
-                await sharp(imageResponse.data)
-                    .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
-                    .jpeg({ quality: 80 })
-                    .toFile(outputPath);
+                if (results && results.length > 0) {
+                    // On cherche le premier résultat avec une image valide
+                    const match = results.find(r => r.cover_image && !r.cover_image.includes('spacer.gif'));
 
-                db.prepare("UPDATE albums SET cover_url = ? WHERE id = ?").run(`/uploads/${filename}`, album.id);
-                count++;
+                    if (match) {
+                        const imgUrl = match.cover_image;
+
+                        // Téléchargement de l'image
+                        const imageResponse = await axios.get(imgUrl, {
+                            responseType: 'arraybuffer',
+                            headers: { 
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                                'Authorization': `Discogs token=${DISCOGS_TOKEN.trim()}`
+                            }
+                        });
+
+                        const filename = `discogs-${album.id}.jpg`;
+                        const outputPath = path.join(__dirname, 'public', 'uploads', filename);
+
+                        // Traitement de l'image avec Sharp
+                        await sharp(imageResponse.data)
+                            .resize(600, 600, { fit: 'cover' })
+                            .jpeg({ quality: 80 })
+                            .toFile(outputPath);
+
+                        // Mise à jour de la base de données
+                        db.prepare("UPDATE albums SET cover_url = ? WHERE id = ?").run(`/uploads/${filename}`, album.id);
+                        count++;
+                        console.log(`✅ ${album.title} : Image sauvegardée.`);
+                    }
+                }
+
+                success = true; // On sort de la boucle while
+                
+                // Envoi de la progression au navigateur
+                res.write(`data: ${JSON.stringify({ 
+                    progress: Math.round(((i + 1) / total) * 100), 
+                    current: i + 1, 
+                    total: total, 
+                    title: album.title 
+                })}\n\n`);
+
+                // Pause de sécurité entre chaque album (Important pour éviter le 429)
+                await new Promise(r => setTimeout(r, 3500));
+
+            } catch (error) {
+                attempts++;
+                if (error.response && error.response.status === 429) {
+                    console.error(`⚠️ Limite atteinte (429) pour ${album.title}. Pause de 60s...`);
+                    await new Promise(r => setTimeout(r, 60000));
+                } else if (error.response && error.response.status === 403) {
+                    console.error("❌ Erreur 403 : Accès refusé par Discogs. Arrêt du scan.");
+                    res.write(`data: ${JSON.stringify({ error: "L'API Discogs bloque l'accès (403). Réessayez plus tard ou changez d'IP." })}\n\n`);
+                    return res.end();
+                } else {
+                    console.error(`❌ Erreur sur ${album.title}:`, error.message);
+                    success = true; // On passe à l'album suivant malgré l'erreur
+                }
             }
-
-            // ENVOI DE LA PROGRESSION AU NAVIGATEUR
-            const progress = Math.round((processed / total) * 100);
-            res.write(`data: ${JSON.stringify({ progress, current: processed, total, title: album.title })}\n\n`);
-
-            // Respect du rate limit Discogs (uniquement si ce n'est pas le dernier)
-            if (processed < total) await new Promise(r => setTimeout(r, 2000));
-
-        } catch (error) {
-            console.error(`Error ${album.title}:`, error.message);
         }
     }
 
+    console.log(`--- Scan terminé : ${count} images récupérées ---`);
     res.write(`data: ${JSON.stringify({ success: true, message: `${count} pochettes récupérées !` })}\n\n`);
     res.end();
 });
@@ -442,6 +475,7 @@ app.post('/api/settings/import-csv', isAuthenticated, upload.single('csv_file'),
             }
         });
 });
+
 // --- 8. LANCEMENT ---
 app.listen(port, () => {
     console.log(`Sillon tourne sur http://localhost:${port}`);
