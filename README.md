@@ -32,14 +32,15 @@ Clonez le dépôt et installez les dépendances :
 git clone [https://github.com/votre-utilisateur/sillon.git](https://github.com/votre-utilisateur/sillon.git)
 cd sillon
 npm install
+```
 
-### 3. Lancement de l'application
+## 3. Lancement de l'application
 
 Démarrez le serveur :
 Bash
-
+```bash
 node app.js
-
+```
 L'application est maintenant accessible sur : http://localhost:3002
 
 ### 4. Configuration initiale
