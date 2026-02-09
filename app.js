@@ -329,7 +329,8 @@ app.get('/api/settings/scan-covers', isAuthenticated, async (req, res) => {
                     },
                     headers: {
                         // User-Agent de navigateur réel pour éviter le blocage 403
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+                        'User-Agent': 'Sillon/1.1 sillon.mail@gmail.com',
+                        'Authorization': `Discogs token=${DISCOGS_TOKEN.trim()}`
                     }
                 });
 
@@ -346,7 +347,7 @@ app.get('/api/settings/scan-covers', isAuthenticated, async (req, res) => {
                         const imageResponse = await axios.get(imgUrl, {
                             responseType: 'arraybuffer',
                             headers: { 
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                                'User-Agent': 'Sillon/1.1 sillon.mail@gmail.com',
                                 'Authorization': `Discogs token=${DISCOGS_TOKEN.trim()}`
                             }
                         });

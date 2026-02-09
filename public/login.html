@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta charset="UTF-8">
     <title>MyVinyl - Connexion</title>
     <style>
@@ -104,6 +105,70 @@
             border-radius: 8px;
             border: 1px solid rgba(255, 107, 107, 0.2);
         }
+
+        /*OPTI SMARTPHONE*/
+
+        @media (max-width: 600px) {
+            /* Conteneur principal centré */
+            .login-container {
+                width: 90% !important;
+                padding: 30px 20px !important;
+                margin: 10vh auto; /* Descend un peu le formulaire pour le pouce */
+            }
+
+            /* Titres plus lisibles */
+            h1 { font-size: 1.8rem; margin-bottom: 25px; }
+
+            /* Inputs : Largeur totale et hauteur confortable */
+            input[type="text"], 
+            input[type="password"],
+            input[type="email"] {
+                width: 100% !important;
+                height: 50px; /* Taille optimale pour le tactile */
+                font-size: 16px !important; /* EMPÊCHE l'iOS de zoomer automatiquement */
+                padding: 0 15px;
+                margin-bottom: 15px;
+                box-sizing: border-box;
+                border-radius: 8px;
+            }
+
+            /* Bouton de connexion massif */
+            .btn-login {
+                width: 100%;
+                height: 50px;
+                font-size: 1.1rem;
+                font-weight: 800;
+                border-radius: 25px; /* Look plus moderne/mobile */
+                margin-top: 10px;
+            }
+        }
+
+        /* TABLETTE (Login) */
+        @media (min-width: 601px) and (max-width: 1024px) {
+            .login-container {
+                width: 60% !important; /* Ne prend pas tout l'écran */
+                max-width: 450px;
+                margin: 15vh auto !important; /* Centré verticalement */
+                padding: 40px !important;
+                border-radius: 20px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            }
+
+            input[type="text"], 
+            input[type="password"] {
+                height: 48px !important;
+                font-size: 16px !important;
+                margin-bottom: 20px;
+            }
+
+            .btn-login {
+                height: 50px;
+                font-size: 1.1rem;
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -115,7 +180,7 @@
         <h2>SILLON</h2>
         
         <form id="login-form">
-            <input type="text" id="username" placeholder="Utilisateur" required>
+            <input type="text" id="username" autocorrect="off" autocapitalize="none" placeholder="Utilisateur" required>
             <input type="password" id="password" placeholder="Mot de passe" required>
             <button type="submit">Connexion</button>              
             <div id="error-msg" class="error-message">Identifiants invalides</div>

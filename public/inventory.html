@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>MyVinyl - Ma Collection</title>
     <style>
@@ -318,93 +318,199 @@
         }
         .nav-btn-focus:hover { opacity: 1; transform: scale(1.1); }
 
-        /*Adaptation Smartphone*/
+        /*Adaptation SMARTPHONE*/
+        @media (max-width: 600px) {
+            /* 1. BLOCAGE DU SCROLL LATÉRAL ET DU ZOOM */
+            html, body {
+                overflow-x: hidden; /* Empêche tout scroll horizontal */
+                width: 100vw;       /* Force la largeur à la taille de la vue */
+                position: relative;
+                margin: 0;
+                padding: 0;
+                touch-action: pan-y; /* Autorise le scroll vertical mais bloque le zoom/pan horizontal */
+            }
 
-            @media (max-width: 600px) {
-        /* EMPÊCHER LE DÉCALAGE À GAUCHE ET LE ZOOM ACCIDENTEL */
-        html, body {
-            overflow-x: hidden; /* Bloque le défilement latéral */
-            width: 100%;
-            position: relative;
+            /* 2. HEADER : Boutons côte à côte et barre de recherche dessous */
+            .header-bar {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .btn-back, .btn-view {
+                flex: 1 1 calc(50% - 10px) !important; /* Force 2 colonnes pour les boutons */
+                max-width: calc(50% - 5px);
+                height: 38px !important;
+                font-size: 12px !important;
+                margin: 0 !important;
+                box-sizing: border-box;
+            }
+
+            #search {
+                flex: 1 1 100% !important; /* Recherche en dessous sur toute la largeur */
+                width: 100% !important;
+                margin-top: 5px;
+                box-sizing: border-box;
+            }
+
+            /* 3. GRILLE : 2 COLONNES STRICTES SANS DEBORDEMENT */
+            .vinyl-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important; /* Force les 2 colonnes */
+                gap: 12px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 10px !important;
+                box-sizing: border-box !important; /* Très important pour le scroll latéral */
+                margin: 0 !important;
+            }
+
+            /* Images carrées forcées */
+            .vinyl-card {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+
+            .vinyl-card img {
+                width: 100% !important;
+                aspect-ratio: 1 / 1 !important;
+                object-fit: cover !important;
+                display: block;
+            }
+
+            /* 4. MODALE : Pleine largeur pour éviter de pousser l'écran */
+            .modal-content {
+                flex-direction: column !important; /* Empile l'image et les infos */
+                width: 95% !important;
+                max-width: 95vw;
+                margin: 5% auto !important;
+                padding: 15px !important;
+                box-sizing: border-box;
+                border-radius: 12px;
+            }
+
+            .modal-cover {
+                width: 100% !important; /* Prend toute la largeur */
+                max-width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 1 / 1;
+                object-fit: cover;
+                margin-bottom: 20px; /* Espace avant le texte */
+                border-radius: 8px;
+            }
+
+            .modal-info {
+                width: 100% !important; /* Force la largeur totale */
+                padding: 0 !important;   /* Supprime les paddings latéraux inutiles */
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start; /* Aligne le texte à gauche */
+            }
+
+            .modal-info h2, 
+            .modal-info p,
+            .modal-info .modal-field { 
+                width: 100% !important;  /* Chaque ligne prend 100% */
+                box-sizing: border-box;
+                margin-left: 0 !important;
+                text-align: left;        /* Garde le texte lisible à gauche */
+            }
+
+            /* Optionnel : Agrandir un peu les polices pour le confort mobile */
+            .modal-info h2 { font-size: 1.8rem; margin-bottom: 10px; }
+            .modal-info p { font-size: 1.1rem; line-height: 1.4; }
+
+            /* 5. FOCUS : On réduit drastiquement pour smartphone */
+            #focus-container {
+                width: 400vw !important;
+                height: 280px !important;
+                overflow: hidden;
+            }
         }
+        /* TABLETTE (Portrait & Paysage) */
 
-        /* HEADER : On s'assure que tout est visible et bien rangé */
-        .header-bar {
-            display: flex;
-            flex-wrap: wrap; /* Permet aux éléments de passer à la ligne proprement */
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            height: auto !important;
-            padding: 10px 0;
+        @media (min-width: 601px) and (max-width: 1024px) {
+            /* 1. GRILLE : 4 colonnes forcées avec images carrées */
+            .vinyl-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 15px !important;
+                padding: 15px !important;
+            }
+
+            .vinyl-card img {
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                object-fit: cover;
+            }
+
+            /* 2. HEADER : Alignement horizontal aéré */
+            .header-bar {
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: space-between;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .btn-back, .btn-view {
+                flex: 0 1 auto;
+                min-width: 150px;
+                height: 42px !important;
+            }
+
+            #search {
+                flex: 1;
+                max-width: 400px;
+                margin: 0 !important;
+            }
+
+            /* 3. MODALE : Affichage côte à côte (Image à gauche, Texte à droite) */
+            .modal-content {
+                flex-direction: row !important; 
+                width: 85% !important;
+                max-width: 800px;
+                padding: 25px !important;
+                align-items: flex-start;
+            }
+
+            .modal-cover {
+                width: 40% !important; /* Image plus petite que sur mobile */
+                margin-right: 30px;
+                margin-bottom: 0 !important;
+            }
+
+            .modal-info {
+                width: 60% !important;
+                text-align: left;
+            }
+
+            /* 4. PAGE DE LOGIN : Centrage et largeur intermédiaire */
+            .login-container {
+                width: 60% !important;
+                max-width: 500px;
+                margin: 15vh auto;
+            }
+
+            /* 5. MODE FOCUS : Ajustement pour l'écran large de la tablette */
+            #focus-container {
+                height: 450px;
+            }
+
+            #focus-pochette { width: 350px; height: 350px; }
+            #focus-disque { width: 340px; height: 340px; }
+
+            .focus-active #focus-pochette {
+                transform: rotateY(-5deg) translateX(-100px) scale(0.95);
+            }
+
+            .focus-active #focus-disque {
+                transform: translateX(140px) rotate(20deg) scale(0.95);
+            }
         }
-
-        .btn-back, .btn-view {
-            flex: 1; /* Les deux boutons se partagent la première ligne */
-            height: 34px !important;
-            font-size: 12px !important;
-            min-width: 120px;
-            margin: 0 !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #search {
-            width: 100% !important; /* La recherche prend toute la place dessous */
-            margin-top: 5px;
-            order: 3; /* Force la recherche en dernière position */
-        }
-
-        /* GRILLE : Centrée et fixe */
-        .vinyl-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            gap: 15px;
-            margin: 0 auto;
-        }
-
-        /* MODALE : Correction de l'affichage */
-        .modal-content {
-            width: 90% !important;
-            margin: 10% auto !important;
-            flex-direction: column !important;
-            padding: 20px !important;
-            max-height: 85vh;
-            overflow-y: auto;
-            left: 0;
-            right: 0;
-        }
-
-        .modal-info {
-            padding: 0 !important;
-            text-align: center;
-        }
-
-        .modal-cover {
-            width: 100% !important;
-            height: auto !important;
-            margin-bottom: 15px;
-        }
-
-        /* FOCUS MODE : On réduit encore pour éviter de pousser l'écran */
-        #focus-container {
-            width: 100vw;
-            height: 280px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        #focus-pochette { width: 180px; height: 180px; }
-        #focus-disque { width: 170px; height: 170px; }
-
-        .focus-active #focus-pochette { transform: rotateY(-5deg) translateX(-30px) scale(0.8); }
-        .focus-active #focus-disque { transform: translateX(60px) rotate(20deg) scale(0.8); }
-}
 
     </style>
 </head>
@@ -413,7 +519,7 @@
         <div class="header-bar">
             <a href="index.html" class="btn-back">← Accueil</a>
             
-            <input type="text" id="search" placeholder="Rechercher un album, un artiste..." oninput="filterAlbums()">
+            <input type="text" id="search" placeholder="Rechercher un album, un artiste..." oninput="filterGrid()">
             
             <button id="view-toggle" class="btn-view" onclick="toggleView()">
                 <span id="toggle-label">Mode Focus</span>
