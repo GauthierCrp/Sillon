@@ -128,13 +128,45 @@
             -webkit-backdrop-filter: blur(5px);
             font-family: 'Nunito', sans-serif;
             font-weight: 700;
+            font-size: 16px;
             transition: 0.3s;
             margin-right: -200px; /* Ajustez ce chiffre selon vos goûts */
+            z-index: 4000;
         }
 
         .btn-view:hover {
             background: rgba(255, 255, 255, 0.2);
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-add {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 46px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%; /* Cercle parfait */
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+            font-weight: 800;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            z-index: 4000;
+        }
+
+        .btn-add:hover {
+            background: var(--accent); /* Ton violet foncé */
+            transform: scale(1.1) rotate(90deg); /* Petit effet de rotation sympa */
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .plus-icon {
+            line-height: 1;
+            margin-top: -2px; /* Ajustement visuel pour centrer le + */
         }
     
         /* La Grille */
@@ -217,20 +249,32 @@
         .modal-left { flex: 1; }
         .modal-right { flex: 1.5; }
         .modal-cover { width: 100%; border-radius: 10px; box-shadow: 0 5px 15px rgb(0, 0, 0); }
+
+        .modal-right label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 700;
+            font-size: 0.95rem; /* Un peu plus grand que la normale */
+            color: rgb(168, 167, 167);
+        }
         
         /* Formulaire dans la modale */
         input, select, textarea {
-            width: 100%; padding: 12px; margin-bottom: 12px; 
+            width: 100%; padding: 8px; margin-bottom: 12px; 
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-radius: 8px; box-sizing: border-box; color: white;
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            color: white;
+            font-size: 1.1rem;
+            font-family: 'Nunito', sans-serif;
         }
     
         input[readonly], textarea[readonly], select[disabled] {
-            background: rgba(0, 0, 0, 0.3); border-color: transparent; color: #aaa; cursor: default;
+            background: rgba(0, 0, 0, 0.3); border-color: transparent; color: rgb(240, 240, 240); cursor: default;
         }
     
-        h4 { margin: 10px 0; color: #888; text-transform: uppercase; font-size: 0.8em; }
+        h4 { margin: 10px 0; color: rgb(105, 105, 105); text-transform: uppercase; font-size: 0.8em; }
     
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
@@ -600,13 +644,19 @@
 <body>
     <div class="container">
         <div class="header-bar">
+
             <a href="index.html" class="btn-back">← Accueil</a>
-            
+
             <input type="text" id="search" placeholder="Rechercher un album, un artiste..." oninput="filterGrid()">
             
+            <div style="grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 12px;">
+            <a href="add.html" class="btn-add" title="Ajouter un album" style="text-decoration: none;">
+                <span style="font-size: 20px; font-weight: 800;">+</span></a>
             <button id="view-toggle" class="btn-view" onclick="toggleView()">
-                <span id="toggle-label">Mode Focus</span>
+                <span id="toggle-label">Switch View</span>
             </button>
+            </div>
+
         </div>
         <div id="vinyl-grid" class="vinyl-grid"></div>
     </div>
@@ -712,8 +762,6 @@
                         url('background.jpg') no-repeat center center fixed;
             background-size: 20px 20px, cover, cover;
             z-index: 2000; align-items: center; justify-content: center; flex-direction: column; overflow: hidden;">
-            
-            <span onclick="switchView('grid')" style="position: absolute; top: 30px; right: 40px; color: white; font-size: 40px; cursor: pointer; opacity: 0.5;">&times;</span>
             
             <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
                 <button class="nav-btn-focus" onclick="prevVinyl()">‹</button>

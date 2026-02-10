@@ -20,9 +20,8 @@
             padding: 40px 20px;
             min-height: 100vh;
             color: #eee;
-            /* Superposition : Points > Voile Sombre > Image */
             background: 
-                radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
+                radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
                 linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
                 url('background.jpg') no-repeat center center fixed;
             background-size: 20px 20px, cover, cover;
@@ -98,28 +97,25 @@
         /* Grille des Tuiles - 3 colonnes sur une ligne */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
             width: 100%;
         }
 
         .menu-tile {
-            background: var(--glass-bg);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            color: white;
-            padding: 35px 15px;
-            border-radius: 18px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: bold;
-            border: 1px solid var(--glass-border);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
+            height: 180px; 
+            padding: 20px;
+            box-sizing: border-box;
+            background: var(--glass-bg);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .menu-tile:hover {
@@ -130,7 +126,40 @@
         }
 
         .tile-icon {
-            font-size: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1; 
+            width: 100%;
+        }
+
+        .tile-icon img {
+            width: 80px; /* Taille de ton logo PNG */
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+        }
+
+        .menu-tile span:not(.tile-icon) {
+            margin-top: 15px;      /* Espace minimum avec l'icône */
+            font-size: 16px;       /* TAILLE DU TEXTE : réglable ici */
+            font-weight: 800;      /* Très gras pour le côté luxe/moderne */
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;   /* Espacement des lettres pour le style sobre */
+            opacity: 0.7;          /* Un peu plus discret par défaut */
+            transition: 0.3s;
+        }
+
+        .menu-tile:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .menu-tile:hover span {
+            opacity: 1;
+            letter-spacing: 3px; /* Le texte s'étire légèrement au survol */
         }
 
         @media (max-width: 768px) {
@@ -149,14 +178,15 @@
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
+            border-radius: 20px;
             color: #ff6b6b; /* Un rouge doux pour indiquer la sortie */
             text-decoration: none;
             font-family: 'Nunito', sans-serif;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.3s ease;
             z-index: 1000; /* Pour qu'il reste au-dessus de tout */
+            margin-right: 50px;
         }
 
         .logout-btn:hover {
@@ -229,15 +259,16 @@
 
         <nav class="menu-grid">
             <a href="inventory.html" class="menu-tile">
-                <span class="tile-icon">💿</span>
+                <div class="tile-icon">
+                    <img src="dark_logo.png" alt="Vinyles">
+                </div>
                 <span>Mes Vinyles</span>
             </a>
-            <a href="add.html" class="menu-tile">
-                <span class="tile-icon">➕</span>
-                <span>Ajouter</span>
-            </a>
+        
             <a href="wishlist.html" class="menu-tile">
-                <span class="tile-icon">✨</span>
+                <div class="tile-icon">
+                    <img src="light_logo.png" alt="Wishlist">
+                </div>
                 <span>Ma Wishlist</span>
             </a>
         </nav>
