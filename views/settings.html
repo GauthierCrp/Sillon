@@ -115,7 +115,7 @@
 <body>
 
     <div class="settings-container">
-        <a href="/index.html" class="btn-back">← Retour</a>
+        <a href="/" class="btn-back">← Retour</a>
         <h1>Paramètres</h1>
 
         <section class="settings-section">
@@ -150,12 +150,51 @@
             <div id="import-status" class="status-msg"></div>
         </section>
 
+        <section class="settings-section">
+            <h2>💾 Sauvegarde de la Collection</h2>
+            <div class="settings-card">
+                <h3>Sauvegarde & Sécurité</h3>
+                <p>Téléchargez une archive complète de votre collection (données + images).</p>
+                <button onclick="generateBackup()" id="btn-backup" class="btn-action btn-primary">
+                    Créer un Backup (.zip)
+                </button>
+                <div id="backup-status" style="margin-top: 10px; font-size: 0.9em; color: #bbb;"></div>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>🔄 Restauration de Backup</h2>
+                <div class="settings-card" style="margin-top: 20px;">
+                <h3>Restaurer une sauvegarde</h3>
+                <p>Sélectionnez un fichier .zip pour restaurer vos données et images.</p>
+                <input type="file" id="restore-file" accept=".zip" style="display: none;" onchange="handleRestore(this)">
+                <button onclick="document.getElementById('restore-file').click()" class="btn-action btn-primary">
+                    Importer un ZIP
+                </button>
+                <div id="restore-status" style="margin-top: 10px; font-size: 0.9em;"></div>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>🔑 Sécurité du Compte  </h2>
+                <div class="settings-card">
+                    <h3>Changer les identifiants de Connexion</h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <input type="text" id="new-login" placeholder="Nouveau Login" class="settings-input">
+                        <input type="password" id="new-password" placeholder="Nouveau Mot de passe" class="settings-input">
+                        <button onclick="updateAuth()" class="btn-action btn-primary">Mettre à jour les accès</button>
+                    </div>
+                    <div id="auth-status" style="margin-top: 10px; font-size: 0.9em;"></div>
+                </div>
+        </section>
+
         <section class="settings-section" style="border-color: rgba(239, 68, 68, 0.3);">
             <h2 style="color: #f87171;">⚠️ Zone de Danger</h2>
             <p style="font-size: 0.85rem; opacity: 0.7;">Vider définitivement la base de données :</p>
             <button class="btn-action btn-danger" onclick="resetDatabase()">Réinitialiser la base</button>
             <div id="reset-status" class="status-msg"></div>
         </section>
+
     </div>
 
     <script>
@@ -235,6 +274,7 @@
             location.href = '/index.html';
         }
 
+        //Fonction Import CSV
         async function importCSV() {
             const fileInput = document.getElementById('csv-file');
             const status = document.getElementById('import-status');
@@ -247,6 +287,112 @@
                 if (res.ok) { status.style.color = "#4ade80"; status.innerText = "✅ Terminé !"; }
             } catch (err) { status.innerText = "❌ Erreur import."; }
         }
+
+        // Fonction de Génération d'un Backup de Base
+        async function generateBackup() {
+            const btn = document.getElementById('btn-backup');
+            const status = document.getElementById('backup-status');
+            
+            btn.disabled = true;
+            btn.innerText = "Génération en cours...";
+            status.innerText = "Le serveur prépare l'archive, cela peut prendre un moment selon le nombre d'images...";
+
+            try {
+                const response = await fetch('/api/settings/backup');
+                
+                if (response.ok) {
+                    // On récupère le fichier sous forme de "blob"
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    // Création d'un lien invisible pour déclencher le téléchargement
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `myvinyl_backup_${new Date().toISOString().split('T')[0]}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    
+                    status.style.color = "var(--success)";
+                    status.innerText = "Sauvegarde réussie !";
+                } else {
+                    throw new Error('Erreur serveur lors de la création du backup');
+                }
+            } catch (error) {
+                console.error(error);
+                status.style.color = "#ff6b6b";
+                status.innerText = "Erreur lors de la sauvegarde.";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Créer un Backup (.zip)";
+            }
+        }
+
+        // Fonction déclenchement du la restauration de Base
+        async function handleRestore(input) {
+            if (!confirm("Attention : Cela écrasera toutes vos données actuelles. Continuer ?")) return;
+
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('backup', file);
+
+            const status = document.getElementById('restore-status');
+            status.innerText = "Restauration en cours...";
+            status.style.color = "orange";
+
+            try {
+                const response = await fetch('/api/settings/restore', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    status.innerText = "Succès ! La page va s'actualiser...";
+                    status.style.color = "var(--success)";
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (err) {
+                status.innerText = "Erreur : " + err.message;
+                status.style.color = "#ff6b6b";
+            }
+        }
+
+        //Fonction de remplacement du Login & Mot de passe
+        async function updateAuth() {
+    const login = document.getElementById('new-login').value;
+    const password = document.getElementById('new-password').value;
+    const status = document.getElementById('auth-status');
+
+    if (!login || !password) {
+        alert("Veuillez remplir les deux champs.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/update-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            status.innerText = result.message;
+            status.style.color = "var(--success)";
+            // Optionnel : vider les champs
+            document.getElementById('new-login').value = '';
+            document.getElementById('new-password').value = '';
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (err) {
+        status.innerText = "Erreur : " + err.message;
+        status.style.color = "#ff6b6b";
+    }
+}
     </script>
 </body>
 </html>

@@ -190,31 +190,32 @@
 
     <script>
         document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Empêche le rechargement de la page
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error-msg');
-
-            // On cache le message d'erreur au début de chaque tentative
-            errorDiv.style.display = 'none';
+            const errorMsg = document.getElementById('error-msg');
 
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch('/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ username, password })
                 });
 
-                if (response.ok) {
-                    window.location.href = 'index.html';
+                if (response.redirected) {
+                    // Si le serveur répond par une redirection (vers /)
+                    window.location.href = response.url;
+                } else if (response.ok) {
+                    window.location.href = '/';
                 } else {
-                    // Affichage uniquement en cas d'échec
-                    errorDiv.style.display = 'block';
+                    errorMsg.style.display = 'block';
                 }
             } catch (err) {
-                console.error("Erreur de connexion:", err);
-                errorDiv.innerText = "Erreur de connexion au serveur";
-                errorDiv.style.display = 'block';
+                console.error("Erreur connexion:", err);
+                errorMsg.style.display = 'block';
             }
         });
     </script>

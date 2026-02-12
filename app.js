@@ -6,7 +6,11 @@ const fs = require('fs');
 const sharp = require('sharp');
 const axios = require('axios');
 const session = require('express-session');
+const archiver = require('archiver');
+const unzipper = require('unzipper');
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const port = 3002;
 
 
@@ -20,7 +24,7 @@ dirs.forEach(dir => {
 });
 
 // --- 1. CONFIGURATION DE LA BASE DE DONNÉES ---
-const db = new Database('./database/collection.db');
+let db = new Database('./database/collection.db');
 db.exec(`
   CREATE TABLE IF NOT EXISTS albums (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +54,10 @@ db.exec(`
 `);
 
 db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('token_discogs', '');
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('admin_login', 'admin');
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('admin_password', 'admin');
 
+console.log("✅ Configuration initiale vérifiée.");
 
 // --- 2. CONFIGURATION DE MULTER (UPLOADS) ---
 const uploadDir = './public/uploads';
@@ -73,7 +80,7 @@ app.use(session({
     secret: 'ton_secret_ultra_confidentiel', 
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 3600000 } // Session de 1 heure
+    cookie: { maxAge: 3600000 }
 }));
 
 // --- 4. MIDDLEWARES DE SÉCURITÉ ---
@@ -88,83 +95,100 @@ const isAuthenticated = (req, res, next) => {
         return res.status(401).json({ error: "Non autorisé" });
     }
     // Sinon, on redirige vers la page de login
-    res.redirect('/login.html');
+    res.redirect('/login');
 };
 
 // --- 5. ROUTES D'AUTHENTIFICATION ---
 
-app.post('/api/login', (req, res) => {
+app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    // Identifiants à personnaliser
-    if (username === 'admin' && password === 'admin') {
+
+    const adminLogin = db.prepare("SELECT value FROM settings WHERE key = 'admin_login'").get();
+    const adminPass = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get();
+
+    const validUser = adminLogin ? adminLogin.value : 'admin';
+    const validPass = adminPass ? adminPass.value : 'admin';
+
+    if (username === validUser && password === validPass) {
         req.session.isLoggedIn = true;
-        res.json({ success: true });
+        res.status(200).json({ success: true });
     } else {
-        res.status(401).json({ error: "Identifiants incorrects" });
+        res.status(401).json({ success: false, message: "Identifiants invalides" });
     }
 });
 
 app.get('/logout', (req, res) => {
     req.session.destroy();
-    res.redirect('/login.html');
+    res.redirect('/login');
 });
 
-// --- 6. PROTECTION DES PAGES HTML ---
-// On protège les pages sensibles individuellement AVANT d'exposer le dossier public
+// --- 6.a MIDDLEWARE STATIQUE ---
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- 6.b PROTECTION DES PAGES HTML ---
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'login.html'));
+});
 
 app.get('/', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
-app.get('/index.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/inventory', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'inventory.html'));
 });
 
-app.get('/inventory.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'inventory.html'));
+app.get('/add', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'add.html'));
 });
 
-app.get('/add.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'add.html'));
+app.get('/wishlist', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'wishlist.html'));
+});
+
+app.get('/add-wishlist', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'add-wishlist.html'));
+});
+
+app.get('/stats', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'stats.html'));
 });
 
 app.get('/settings', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/settings.html'));
+    res.sendFile(path.join(__dirname, 'views', 'settings.html'));
 });
 
-// Libère l'accès aux fichiers statiques (CSS, images, login.html)
-app.use(express.static('public'));
+app.use((req, res, next) => {
+    if (req.url.startsWith('/api') || req.url.includes('.')) {
+        return next();
+    }
+    
+    if (req.session.admin) {
+        res.redirect('/inventory');
+    } else {
+        res.redirect('/login');
+    }
+});
+
 
 // --- 7. ROUTES API (PROTÉGÉES) ---
 
-app.get('/api/stats', isAuthenticated, (req, res) => {
-    try {
-        const count = db.prepare('SELECT COUNT(*) as total FROM albums WHERE is_wishlist = 0').get();
-        const topArtist = db.prepare('SELECT artist, COUNT(*) as count FROM albums WHERE is_wishlist = 0 GROUP BY artist ORDER BY count DESC LIMIT 1').get();
-        const wishCount = db.prepare('SELECT COUNT(*) as total FROM albums WHERE is_wishlist = 1').get();
-
-        res.json({
-            totalVinyls: count.total,
-            topArtist: topArtist ? topArtist.artist : "Aucun",
-            wishlistCount: wishCount.total
-        });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 app.get('/api/albums', isAuthenticated, (req, res) => {
     const isWishlist = req.query.wishlist === 'true' ? 1 : 0;
-    const albums = db.prepare('SELECT * FROM albums WHERE is_wishlist = ? ORDER BY artist ASC').all(isWishlist);
+    const albums = db.prepare('SELECT * FROM albums WHERE is_wishlist = ? ORDER BY artist ASC, year DESC').all(isWishlist);
     res.json(albums);
 });
 
 app.post('/api/albums', isAuthenticated, uploadFields, async (req, res) => {
     try {
-        const { catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, vinyl_color } = req.body;
+        const { catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, vinyl_color, is_wishlist } = req.body;
         
+        const wishlistVal = is_wishlist === '1' ? 1 : 0;
+
         let cover_url = null;
         let label_url = null;
 
-        // Fonction utilitaire pour optimiser et sauvegarder
         const processImage = async (file, prefix) => {
             const filename = `${prefix}-${Date.now()}.jpg`;
             const outputPath = path.join(__dirname, 'public/uploads', filename);
@@ -184,14 +208,31 @@ app.post('/api/albums', isAuthenticated, uploadFields, async (req, res) => {
         }
 
         const insert = db.prepare(`
-            INSERT INTO albums (catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url, label_url, vinyl_color)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO albums (catalog_id, artist, title, label, format, year, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url, label_url, vinyl_color, is_wishlist)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         
-        insert.run(catalog_id, artist, title, label, format, parseInt(year) || null, style, vinyl_condition, sleeve_condition, tracklist, notes, cover_url, label_url, vinyl_color || '#111111');
+        insert.run(
+            catalog_id, 
+            artist, 
+            title, 
+            label, 
+            format, 
+            parseInt(year) || null, 
+            style, 
+            vinyl_condition, 
+            sleeve_condition, 
+            tracklist, 
+            notes, 
+            cover_url, 
+            label_url, 
+            vinyl_color || '#111111',
+            wishlistVal 
+        );
         
         res.status(201).json({ message: "Album ajouté avec succès !" });
     } catch (err) { 
+        console.error("Erreur lors de l'ajout de l'album:", err);
         res.status(500).json({ error: err.message }); 
     }
 });
@@ -294,6 +335,40 @@ app.delete('/api/albums/:id', isAuthenticated, (req, res) => {
     db.prepare('DELETE FROM albums WHERE id = ?').run(req.params.id);
     res.json({ success: true });
 });
+///////////////////////////////////////////////////////////////////////////////////
+//PAGE STATS////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+app.get('/api/stats', isAuthenticated, (req, res) => {
+    try {
+        // Compteurs de base
+        const total = db.prepare("SELECT COUNT(*) as count FROM albums WHERE is_wishlist = 0").get()?.count || 0;
+        const coloredCount = db.prepare("SELECT COUNT(*) as count FROM albums WHERE is_wishlist = 0 AND vinyl_color NOT IN ('#111111', '#000000', 'black', '#111')").get()?.count || 0;
+        
+        // Vinyle le plus ancien et le plus récent
+        const oldest = db.prepare("SELECT artist, title, year FROM albums WHERE is_wishlist = 0 AND year > 0 ORDER BY year ASC LIMIT 1").get() || null;
+        const newest = db.prepare("SELECT artist, title, year FROM albums WHERE is_wishlist = 0 AND year > 0 ORDER BY year DESC LIMIT 1").get() || null;
+        
+        // Listes pour les graphiques (on force un tableau vide [] si aucun résultat)
+        const topArtists = db.prepare("SELECT artist, COUNT(*) as count FROM albums WHERE is_wishlist = 0 GROUP BY artist ORDER BY count DESC LIMIT 5").all() || [];
+        const styles = db.prepare("SELECT style, COUNT(*) as count FROM albums WHERE is_wishlist = 0 GROUP BY style ORDER BY count DESC").all() || [];
+        const conditionsVinyl = db.prepare("SELECT vinyl_condition as condition, COUNT(*) as count FROM albums WHERE is_wishlist = 0 GROUP BY vinyl_condition").all() || [];
+        const conditionsSleeve = db.prepare("SELECT sleeve_condition as condition, COUNT(*) as count FROM albums WHERE is_wishlist = 0 GROUP BY sleeve_condition").all() || [];
+
+        res.json({ 
+            total, 
+            coloredCount, 
+            oldest, 
+            newest, 
+            topArtists, 
+            styles, 
+            conditionsVinyl, 
+            conditionsSleeve 
+        });
+    } catch (err) {
+        console.error("Erreur API Stats:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 ///////////////////////////////////////////////////////////////////////////////////
 //PAGE SETTINGS////////////////////////////////////////////////////////////////////
@@ -317,12 +392,54 @@ app.get('/api/settings/token', (req, res) => {
     res.json({ token: row ? row.value : "" });
 });
 
-//// Route pour vider la base
+//// Route pour vider la base et supprimer les images
 app.post('/api/settings/reset', isAuthenticated, (req, res) => {
     try {
+        // 1. Vider la table des albums
         db.prepare('DELETE FROM albums').run();
-        res.json({ success: true, message: "Base de données vidée" });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+
+        // 2. Nettoie physiquement le fichier et réduit sa taille
+        db.prepare('VACUUM').run();
+
+        // 3. Vider le dossier des images
+        const uploadsPath = path.join(__dirname, 'public', 'uploads');
+        
+        if (fs.existsSync(uploadsPath)) {
+            const files = fs.readdirSync(uploadsPath);
+            
+            for (const file of files) {
+                const filePath = path.join(uploadsPath, file);
+                
+                // On vérifie si c'est un fichier (pour ne pas supprimer les sous-dossiers par erreur)
+                // ou on utilise l'option recursive pour tout nettoyer
+                if (fs.lstatSync(filePath).isFile()) {
+                    fs.unlinkSync(filePath);
+                } else if (fs.lstatSync(filePath).isDirectory()) {
+                    // Si vous avez des sous-dossiers (comme 'labels'), on les vide aussi
+                    fs.rmSync(filePath, { recursive: true, force: true });
+                }
+            }
+        }
+
+        res.json({ success: true, message: "Base de données vidée et images supprimées" });
+    } catch (err) { 
+        console.error("Erreur lors du reset :", err);
+        res.status(500).json({ error: err.message }); 
+    }
+});
+
+// Route pour passer un album de Wishlist à Collection
+app.post('/api/albums/:id/collect', isAuthenticated, (req, res) => {
+    try {
+        const result = db.prepare('UPDATE albums SET is_wishlist = 0 WHERE id = ?').run(req.params.id);
+        if (result.changes > 0) {
+            res.json({ success: true, message: "Album ajouté à la collection !" });
+        } else {
+            res.status(404).json({ error: "Album non trouvé" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 //// API : Scan Discogs (Téléchargement local + Sharp)
@@ -518,6 +635,116 @@ app.post('/api/settings/import-csv', isAuthenticated, upload.single('csv_file'),
                 res.status(500).json({ error: "Erreur lors de l'écriture en base de données." });
             }
         });
+});
+
+//// Route de Backup Complet (DB + Images)
+app.get('/api/settings/backup', isAuthenticated, (req, res) => {
+    // Nom du fichier avec la date du jour
+    const fileName = `backup-myvinyl-${new Date().toISOString().split('T')[0]}.zip`;
+
+    // Configuration des headers pour le téléchargement
+    res.attachment(fileName);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    // Gestion des erreurs d'archivage
+    archive.on('error', (err) => {
+        res.status(500).send({ error: err.message });
+    });
+
+    // Envoi du zip directement dans la réponse HTTP (streaming)
+    archive.pipe(res);
+
+    // 1. Ajouter le fichier de base de données
+    const dbPath = path.join(__dirname, 'database', 'collection.db');
+    if (fs.existsSync(dbPath)) {
+        archive.file(dbPath, { name: 'collection.db' });
+    }
+
+    // 2. Ajouter tout le dossier d'images
+    const uploadsPath = path.join(__dirname, 'public', 'uploads');
+    if (fs.existsSync(uploadsPath)) {
+        // 'uploads/' définit le nom du dossier à l'intérieur du ZIP
+        archive.directory(uploadsPath, 'uploads');
+    }
+
+    // Finaliser l'archive
+    archive.finalize();
+});
+
+//// Route de Restauration (Upload ZIP)
+app.post('/api/settings/restore', isAuthenticated, multer({ dest: 'temp/' }).single('backup'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "Aucun fichier fourni" });
+
+    const zipPath = req.file.path;
+
+    try {
+        db.close();
+        console.log("🔒 Base de données fermée pour restauration");
+
+        // 2. Ouvrir le ZIP et traiter chaque fichier
+        const directory = await unzipper.Open.file(zipPath);
+        
+        for (const file of directory.files) {
+            if (file.path === 'collection.db') {
+                const targetPath = path.join(__dirname, 'database', 'collection.db');
+                const content = await file.buffer();
+                fs.writeFileSync(targetPath, content);
+                console.log("✅ Base de données restaurée dans /database/");
+            } 
+            
+            else if (file.path.startsWith('uploads/')) {
+                const relativePath = file.path.replace('uploads/', '');
+                const targetPath = path.join(__dirname, 'public', 'uploads', relativePath);
+                
+                const destDir = path.dirname(targetPath);
+                if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+                const content = await file.buffer();
+                fs.writeFileSync(targetPath, content);
+            }
+        }
+
+        db = new Database('./database/collection.db');
+        console.log("🔓 Base de données ré-ouverte");
+
+        // 4. Nettoyage
+        fs.unlinkSync(zipPath);
+
+        res.json({ success: true, message: "Restauration terminée et fichiers placés correctement." });
+
+    } catch (err) {
+        console.error("Erreur Restauration détaillée:", err);
+        // Tenter de ré-ouvrir la BDD même en cas d'erreur pour ne pas bloquer l'app
+        try { db = new Database('./database/collection.db'); } catch(e) {}
+        res.status(500).json({ error: "Échec de la restauration : " + err.message });
+    }
+});
+
+//// Route pour modifier les identifiants de connexion
+app.post('/api/settings/update-auth', isAuthenticated, (req, res) => {
+    const { login, password } = req.body;
+
+    if (!login || !password) {
+        return res.status(400).json({ error: "Le login et le mot de passe ne peuvent pas être vides." });
+    }
+
+    try {
+        const updateLogin = db.prepare("UPDATE settings SET value = ? WHERE key = 'admin_login'");
+        const updatePass = db.prepare("UPDATE settings SET value = ? WHERE key = 'admin_password'");
+
+        // On utilise une transaction pour être sûr que les deux sont mis à jour
+        const updateAuth = db.transaction((l, p) => {
+            updateLogin.run(l);
+            updatePass.run(p);
+        });
+
+        updateAuth(login, password);
+
+        res.json({ success: true, message: "Identifiants mis à jour avec succès !" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- 8. LANCEMENT ---

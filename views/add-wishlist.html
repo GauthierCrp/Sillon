@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyVinyl - Ajouter un Album</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #831a86;
+            --success: #27ae60;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: #eee;
+            background: 
+                radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
+                linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                url('background.jpg') no-repeat center center fixed;
+            background-size: 20px 20px, cover, cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* --- NAVIGATION BAR CORRIGÉE --- */
+        .header-bar {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; 
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .btn-back {
+            grid-column: 1;
+            justify-self: start;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center; 
+            height: 46px;
+            padding: 0 25px; 
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            font-weight: 700;
+            font-size: 16px; 
+            transition: 0.3s;
+            box-sizing: border-box; 
+            font-family: 'Nunito', sans-serif;
+            gap: 10px;
+            margin-top: 25px;
+            margin-left: 150px; /* Aligné avec le bord gauche */
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        /* --- FORMULAIRE --- */
+        .form-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 650px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            margin-top: 80px; /* Pour ne pas être caché par la header-bar */
+        }
+
+        h2 { text-align: center; letter-spacing: 2px; text-transform: uppercase; margin-top: 0; font-weight: 800; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .full-width { grid-column: span 2; }
+        label { display: block; font-size: 0.8em; color: #bbb; margin-bottom: 5px; margin-top: 10px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            padding-right: 30px !important;
+        }
+
+        select option { background-color: #2c3e50; color: white; }
+
+        input:focus, textarea:focus { border-color: var(--accent); }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: 0.3s;
+            font-size: 1em;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .btn-submit:hover { background: #8b2973; transform: translateY(-2px); }
+
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .header-bar { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .btn-back, .logout-btn-header { margin: 0; width: 100%; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <a href="/wishlist" class="btn-back">← Retour</a>
+        </a>
+    </div>
+
+    <div class="form-card">
+        <h2>Nouvel Album</h2>
+        <form id="add-album-form">
+            <div class="form-grid">
+                <div class="full-width">
+                    <label>Artiste *</label>
+                    <input type="text" id="artist" name="artist" required placeholder="Ex: Pink Floyd">
+                </div>
+
+                <div class="full-width">
+                    <label>Titre de l'album *</label>
+                    <input type="text" id="title" name="title" required placeholder="Ex: The Dark Side of the Moon">
+                </div>
+
+                <div>
+                    <label>ID Catalogue</label>
+                    <input type="text" id="catalog_id" name="catalog_id" placeholder="Ex: SHVL 804">
+                </div>
+
+                <div>
+                    <label>Label</label>
+                    <input type="text" id="label" name="label" placeholder="Ex: Harvest">
+                </div>
+
+                <div>
+                    <label>Année de Sortie</label>
+                    <input type="number" id="year" name="year" placeholder="1973">
+                </div>
+
+                <div>
+                    <label>Format</label>
+                    <select id="format" name="format">
+                        <option value="33T">33 Tours (LP)</option>
+                        <option value="45T">45 Tours (Single)</option>
+                        <option value="10">10 pouces</option>
+                        <option value="Double LP">Double LP</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>État du Vinyle</label>
+                    <select id="vinyl_condition" name="vinyl_condition">
+                        <option value="M">Mint (M)</option>
+                        <option value="NM">Near Mint (NM)</option>
+                        <option value="VG+">Very Good Plus (VG+)</option>
+                        <option value="VG" selected>Very Good (VG)</option>
+                        <option value="G">Good (G)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>État de la Pochette</label>
+                    <select id="sleeve_condition" name="sleeve_condition">
+                        <option value="M">Mint (M)</option>
+                        <option value="NM">Near Mint (NM)</option>
+                        <option value="VG+">Very Good Plus (VG+)</option>
+                        <option value="VG" selected>Very Good (VG)</option>
+                        <option value="G">Good (G)</option>
+                    </select>
+                </div>
+
+                <div class="full-width">
+                    <label>Pochette (Image)</label>
+                    <input type="file" id="cover_file" name="cover_file" accept="image/*">
+                </div>
+
+                <div class="full-width">
+                    <label>Liste des pistes</label>
+                    <textarea id="tracklist" name="tracklist" rows="4" placeholder="1. Speak to Me..."></textarea>
+                </div>
+
+                <div class="full-width">
+                    <label>Notes</label>
+                    <textarea id="notes" name="notes" rows="2" placeholder="Informations complémentaires..."></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Ajouter à la Wishlist</button>
+        </form>
+    </div>
+
+    <script>
+// 1. Gestion de la soumission du formulaire d'ajout
+document.getElementById('add-album-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    formData.append('is_wishlist', '1'); 
+
+    try {
+        const response = await fetch('/api/albums', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            alert('Album ajouté à votre Wishlist !');
+            window.location.href = 'wishlist.html'; 
+        } else {
+            alert('Erreur lors de l\'ajout.');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur réseau.');
+    }
+});
+
+// 2. Fonction pour transférer de Wishlist vers Collection
+async function markAsBought() {
+    const idElement = document.getElementById('modal-album-id');
+    if (!idElement) return;
+    
+    const id = idElement.value; 
+
+    if (!confirm("Voulez-vous déplacer cet album vers votre collection ?")) return;
+
+    try {
+        const response = await fetch(`/api/albums/${id}/collect`, { 
+            method: 'POST' 
+        });
+        
+        if (response.ok) {
+            alert("Bravo ! L'album a été transféré.");
+            location.reload(); 
+        } else {
+            alert("Erreur lors du transfert.");
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+    }
+}
+    </script>
+</body>
+</html>

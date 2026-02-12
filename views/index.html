@@ -97,7 +97,7 @@
         /* Grille des Tuiles - 3 colonnes sur une ligne */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             width: 100%;
         }
@@ -258,18 +258,25 @@
         </div>
 
         <nav class="menu-grid">
-            <a href="inventory.html" class="menu-tile">
+            <a href="/inventory" class="menu-tile">
                 <div class="tile-icon">
                     <img src="dark_logo.png" alt="Vinyles">
                 </div>
                 <span>Mes Vinyles</span>
             </a>
         
-            <a href="wishlist.html" class="menu-tile">
+            <a href="/wishlist" class="menu-tile">
                 <div class="tile-icon">
                     <img src="light_logo.png" alt="Wishlist">
                 </div>
                 <span>Ma Wishlist</span>
+            </a>
+
+            <a href="/stats" class="menu-tile">
+                <div class="tile-icon">
+                    <img src="stats_logo.png" alt="Stats">
+                </div>
+                <span>Stats'</span>
             </a>
         </nav>
     </div>
