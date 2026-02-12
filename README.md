@@ -1,4 +1,4 @@
-# 💿 MyVinyl - Sillon
+# 💿 Sillon
 
 **Domptez votre collection, un microsillon à la fois.**
 
@@ -7,10 +7,12 @@
 
 ---
 
-## 🎸 C'est quoi MyVinyl ?
+## 🎸 C'est quoi Sillon ?
 
-Marre des fichiers Excel poussiéreux ou des étagères où l'on ne retrouve jamais rien ? **MyVinyl (Sillon)** est votre nouveau compagnon de route pour gérer votre audiothèque. Que vous soyez un collectionneur compulsif de vinyles colorés ou un puriste du pressage original, MyVinyl vous permet de cataloguer, visualiser et chérir votre musique avec une interface moderne, fluide et un brin rétro.
+Marre des fichiers Excel poussiéreux ou des étagères où l'on ne retrouve jamais rien ? **Sillon** est votre nouveau compagnon de route pour gérer votre audiothèque. Que vous soyez un collectionneur compulsif de vinyles colorés ou un puriste du pressage original, MyVinyl vous permet de cataloguer, visualiser et chérir votre musique avec une interface moderne, fluide et un brin rétro.
 
+<img width="1841" height="989" alt="image" src="https://github.com/user-attachments/assets/0670c6cb-78aa-4723-a21a-ab58615eeec3" />
+<img width="1841" height="989" alt="image" src="https://github.com/user-attachments/assets/cfebcb15-b015-41c4-8967-776baadbb072" />
 
 
 ---
@@ -24,6 +26,11 @@ Marre des fichiers Excel poussiéreux ou des étagères où l'on ne retrouve jam
 * **🌈 Support Vinyles Colorés :** Identifiez en un coup d'œil vos éditions limitées.
 * **🔐 Accès Sécurisé :** Une page d'authentification robuste pour que vous soyez le seul maître à bord.
 * **💾 Backup & Restore :** Exportez toute votre base de données et vos photos dans un seul fichier ZIP en un clic.
+
+<img width="800" height="600" alt="image" src="https://github.com/user-attachments/assets/5e040548-c094-4fb5-91db-5afa7611d7f8" /> <img width="800" height="600" alt="image" src="https://github.com/user-attachments/assets/0afcf8c2-c8b0-46c3-ac9e-8a37aa420733" />
+
+<img width="1841" height="989" alt="image" src="https://github.com/user-attachments/assets/d52a1185-d842-4ac0-9eb1-d6eec69db2d1" />
+
 
 ---
 
