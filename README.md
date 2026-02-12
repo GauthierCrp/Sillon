@@ -1,78 +1,73 @@
-> **Redonnez du relief à votre collection de vinyles.**
->
-> Sillon est l'écrin numérique que mérite votre discothèque. Conçu pour les passionnés, cet outil allie une interface **Glassmorphism** moderne à la puissance de l'API **Discogs**. Ne vous contentez plus d'une liste textuelle : transformez votre inventaire en une galerie interactive, fluide et automatisée.
+# 💿 MyVinyl - Sillon
+
+**Domptez votre collection, un microsillon à la fois.**
+
+[![Docker Support](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://www.docker.com/)
+[![Node.js Version](https://img.shields.io/badge/Node.js-v22-green?logo=node.js)](https://nodejs.org/)
 
 ---
 
-## ✨ Fonctionnalités clés
+## 🎸 C'est quoi MyVinyl ?
 
-* **🎨 Interface Glassmorphism** : Un design premium avec flous dynamiques et transparences, pensé pour mettre en valeur les visuels de vos albums.
-* **💿 Scan Intelligent Discogs** : Récupération automatique des pochettes originales via l'API Discogs avec une **barre de progression en temps réel** (via Server-Sent Events).
-* **📥 Importation Massive** : Migrez votre collection instantanément grâce à l'import CSV structuré (gestion de 9 colonnes spécifiques).
-* **🖼️ Optimisation des Médias** : Traitement automatique via **Sharp** pour des images légères, rapides à charger et parfaitement dimensionnées (600px).
-* **⚙️ Gestion des Paramètres** : Contrôle total sur votre Token API et vos données, avec masquage de sécurité pour vos clés privées.
-* **🛡️ Base de Données Locale** : Vos données vous appartiennent, stockées en toute sécurité dans une base SQLite ultra-rapide.
-* 
-<img width="1200" height="720" alt="image" src="https://github.com/user-attachments/assets/63f7969f-3848-4f53-840b-cb8ab0b4db85" />
+Marre des fichiers Excel poussiéreux ou des étagères où l'on ne retrouve jamais rien ? **MyVinyl (Sillon)** est votre nouveau compagnon de route pour gérer votre audiothèque. Que vous soyez un collectionneur compulsif de vinyles colorés ou un puriste du pressage original, MyVinyl vous permet de cataloguer, visualiser et chérir votre musique avec une interface moderne, fluide et un brin rétro.
 
-<img width="1200" height="720" alt="image" src="https://github.com/user-attachments/assets/09f84fd3-3282-4f70-b33c-56ada26669d4" />
+
 
 ---
 
-## 🚀 Guide de déploiement
+## 🚀 Fonctionnalités du Groove
 
-### 1. Prérequis
-* **Node.js** (v18.x ou supérieur recommandé)
-* **NPM**
-* Un compte **Discogs** (pour obtenir votre Token personnel)
+* **🗂️ Gestion de Collection :** Ajoutez vos albums, gérez les labels, les formats et les pressages.
+* **📊 Stats Dashboard :** Visualisez votre collection avec des graphiques élégants (Top artistes, répartition par style, états des disques).
+* **📂 Dossiers Intelligents :** Séparez votre collection réelle de votre **Wishlist** (pour ne plus jamais oublier ce que vous cherchez en brocante).
+* **📸 Gestion des Visuels :** Upload de pochettes et optimisation automatique des images avec Sharp.
+* **🌈 Support Vinyles Colorés :** Identifiez en un coup d'œil vos éditions limitées.
+* **🔐 Accès Sécurisé :** Une page d'authentification robuste pour que vous soyez le seul maître à bord.
+* **💾 Backup & Restore :** Exportez toute votre base de données et vos photos dans un seul fichier ZIP en un clic.
 
-### 2. Installation
-Clonez le dépôt et installez les dépendances :
-```bash
-git clone [https://github.com/votre-utilisateur/sillon.git](https://github.com/votre-utilisateur/sillon.git)
-cd sillon
-npm install
-```
+---
 
-## 3. Lancement de l'application
+## 🛠️ Installation (Local)
 
-Démarrez le serveur :
-Bash
-```bash
-node app.js
-```
-L'application est maintenant accessible sur : http://localhost:3002
+### Prérequis
+* **Node.js v22** ou supérieur
+* Un navigateur qui aime la musique
 
-### 4. Configuration initiale
+### Étapes
+1.  Clonez ce dépôt.
+2.  Installez les dépendances :
+    ```bash
+    npm install
+    ```
+3.  Lancez le serveur :
+    ```bash
+    node app.js
+    ```
+4.  Rendez-vous sur `http://localhost:3002`.
 
-    Connectez-vous à l'interface.
+---
 
-    Rendez-vous dans la page Paramètres.
+## 🐳 Installation (Docker - La méthode VIP)
 
-    Saisissez votre Token Discogs et enregistrez-le.
+C'est la méthode recommandée pour garder vos données bien au chaud.
 
-    Vous pouvez désormais lancer un scan des pochettes ou importer votre fichier CSV.
+1.  Assurez-vous d'avoir **Docker** et **Docker Compose** installés.
+2.  Lancez la commande magique :
+    ```bash
+    docker compose up -d --build
+    ```
+3.  **C'est tout.** Votre collection est persistante dans les dossiers `./database` et `./public/uploads`.
 
-📊 Format d'importation CSV
 
-Pour un import réussi, votre fichier .csv doit respecter l'ordre suivant :
 
-    Id Catalog | 2. Artiste | 3. Titre | 4. Label | 5. Format | 6. Année | 7. État Vinyle | 8. État Pochette | 9. Notes
+---
 
-🛠️ Stack Technique
+## 🎨 Design & Couleurs
+L'application utilise une esthétique **Glassmorphism** avec des touches de violet profond (`#831a86`) et de bleu pastel (`#c1c4ef`) pour une expérience visuelle relaxante, idéale pour écouter un bon disque.
 
-    Backend : Node.js & Express
+---
 
-    Base de données : SQLite (via better-sqlite3)
+## 🎷 Le mot de la fin
+> "La musique mérite mieux qu'un tableau de calcul. Elle mérite un écrin."
 
-    Traitement d'image : Sharp
-
-    Communication API : Axios & Server-Sent Events (SSE)
-
-    Frontend : HTML5, CSS3, Vanilla JS
-
-📝 Licence
-
-Ce projet est sous licence MIT.
-
-<p align="center">Fait avec passion pour les amoureux du 33 tours. 🎶</p>
+*Développé avec ❤️ pour les amoureux du son.*

@@ -9,13 +9,18 @@ const session = require('express-session');
 const archiver = require('archiver');
 const unzipper = require('unzipper');
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const port = 3002;
 
 
 // --- CRÉATION AUTOMATIQUE DES DOSSIERS ---
-const dirs = ['./database', './public/uploads'];
+const dirs = [
+    path.join(__dirname, 'database'),
+    path.join(__dirname, 'public', 'uploads')
+];
+
 dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -24,7 +29,8 @@ dirs.forEach(dir => {
 });
 
 // --- 1. CONFIGURATION DE LA BASE DE DONNÉES ---
-let db = new Database('./database/collection.db');
+const dbPath = path.join(__dirname, 'database', 'collection.db');
+let db = new Database(dbPath);
 db.exec(`
   CREATE TABLE IF NOT EXISTS albums (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,7 +66,7 @@ db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('adm
 console.log("✅ Configuration initiale vérifiée.");
 
 // --- 2. CONFIGURATION DE MULTER (UPLOADS) ---
-const uploadDir = './public/uploads';
+const uploadDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -80,7 +86,12 @@ app.use(session({
     secret: 'ton_secret_ultra_confidentiel', 
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 3600000 }
+    proxy: true,
+    cookie: { 
+        maxAge: 3600000,
+        secure: false,
+        sameSite: 'lax'
+    }
 }));
 
 // --- 4. MIDDLEWARES DE SÉCURITÉ ---

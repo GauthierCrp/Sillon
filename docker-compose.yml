@@ -1,0 +1,11 @@
+services:
+  sillon:
+    build: .
+    container_name: sillon_app_V1
+    ports:
+      - "3002:3002"
+    volumes:
+      # On lie les dossiers du conteneur à ton dossier local
+      - ./database:/usr/src/app/database
+      - ./public/uploads:/usr/src/app/public/uploads
+    restart: always
