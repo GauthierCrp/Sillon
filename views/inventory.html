@@ -131,7 +131,7 @@
             font-size: 16px;
             transition: 0.3s;
             margin-right: -200px; /* Ajustez ce chiffre selon vos goûts */
-            z-index: 4000;
+            z-index: 3000;
         }
 
         .btn-view:hover {
@@ -155,7 +155,7 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             cursor: pointer;
-            z-index: 4000;
+            z-index: 3000;
         }
 
         .btn-add:hover {
@@ -212,7 +212,7 @@
         .modal {
             display: none; 
             position: fixed; 
-            z-index: 3000; 
+            z-index: 4000; 
             left: 0; 
             top: 0; 
             width: 100%; 
@@ -445,7 +445,8 @@
         /* Cacher la barre de scroll du bandeau */
         #focus-alphabet-bar::-webkit-scrollbar { width: 0; }
 
-        /*Adaptation SMARTPHONE*/
+        /*/////////////////Adaptation SMARTPHONE///////////////*/
+
         @media (max-width: 600px) {
             /* 1. BLOCAGE DU SCROLL LATÉRAL ET DU ZOOM */
             html, body {
@@ -459,28 +460,20 @@
 
             /* 2. HEADER : Boutons côte à côte et barre de recherche dessous */
             .header-bar {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                width: 100%;
-                box-sizing: border-box;
-                padding: 10px;
-                gap: 10px;
+                display: grid !important;
+                grid-template-columns: auto auto auto !important;
+                gap: 15px 5px !important;
+                padding: 15px !important;
             }
 
-            .btn-back, .btn-view {
-                flex: 1 1 calc(50% - 10px) !important; /* Force 2 colonnes pour les boutons */
-                max-width: calc(50% - 5px);
-                height: 38px !important;
-                font-size: 12px !important;
-                margin: 0 !important;
-                box-sizing: border-box;
-            }
+            .btn-back { grid-area: 1 / 1 !important; margin: 0 !important; min-width: 85px !important; }
+            .btn-view { grid-area: 1 / 2 !important; margin: 0 !important; min-width: 85px !important; }
+            .btn-add { grid-area: 1 / 3 !important; margin: 0 !important; justify-self: end !important; }
 
             #search {
-                flex: 1 1 100% !important; /* Recherche en dessous sur toute la largeur */
+                grid-area: 2 / 1 / 2 / 4 !important;
                 width: 100% !important;
-                margin-top: 5px;
-                box-sizing: border-box;
+                margin: 0 !important;
             }
 
             /* 3. GRILLE : 2 COLONNES STRICTES SANS DEBORDEMENT */
@@ -550,13 +543,63 @@
             .modal-info h2 { font-size: 1.8rem; margin-bottom: 10px; }
             .modal-info p { font-size: 1.1rem; line-height: 1.4; }
 
-            /* 5. FOCUS : On réduit drastiquement pour smartphone */
-            #focus-container {
-                width: 400vw !important;
-                height: 280px !important;
-                overflow: hidden;
+            /* --- VUE FOCUS : LE DÉZOOM --- */
+            #focus-content {
+                    flex-direction: column !important;
+                    justify-content: flex-start !important;
+                    align-items: center !important;
+                    padding-top: 100px !important; /* Place pour les boutons fixes */
             }
-        }
+            
+            #focus-container {
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                align-items: center !important;
+                padding-top: 100px !important; /* Place pour les boutons fixes */
+                transform: scale(0.70)
+            }
+
+
+                /* On réduit l'échelle de l'animation entière de 25% */
+                .vinyl-wrapper {
+                    transform: scale(0.75) !important; 
+                    transform-origin: center center !important;
+                    margin-bottom: -50px !important; /* Compense le vide créé par le scale */
+                    flex-shrink: 0 !important;
+                }
+
+                /* On s'assure que le disque et la pochette ne sont pas coupés */
+                .vinyl-cover-container {
+                    overflow: visible !important;
+                }
+
+                .focus-details {
+                    width: 100% !important;
+                    text-align: center !important;
+                    padding: 0 10px !important;
+                }
+
+                /* --- BOUTONS FOCUS : FIXES EN HAUT --- */
+                .btn-switch-view {
+                    position: fixed !important;
+                    top: 20px !important;
+                    left: 20px !important;
+                    z-index: 1000 !important;
+                    transform: none !important;
+                }
+
+                .btn-add-focus {
+                    position: fixed !important;
+                    top: 20px !important;
+                    right: 20px !important;
+                    left: auto !important;
+                    z-index: 1000 !important;
+                }
+
+                .alphabet-sidebar { display: none !important; }
+                .vinyl-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            }
+
         /* TABLETTE (Portrait & Paysage) */
 
         @media (min-width: 601px) and (max-width: 1024px) {

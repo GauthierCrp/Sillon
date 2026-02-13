@@ -229,6 +229,23 @@
             border-color: #abaafd;
             color: #dbd8e0;
         }
+
+        @media (max-width: 600px) {
+            .stats-container {
+                display: flex; /* Aligne sur une ligne */
+                flex-wrap: nowrap; 
+                overflow-x: auto; /* Permet de swiper si ça dépasse un peu */
+                gap: 10px;
+                padding-bottom: 10px;
+            }
+            .stat-card {
+                flex: 1 0 25%; /* Force les tuiles à être petites */
+                padding: 10px;
+                min-width: 80px;
+            }
+            .stat-card h3 { font-size: 0.8rem; }
+            .stat-card p { font-size: 1.1rem; }
+        }
     </style>
 </head>
 <body>
