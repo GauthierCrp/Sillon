@@ -271,7 +271,7 @@
         async function resetDatabase() {
             if (!confirm("Voulez-vous vraiment TOUT supprimer ?")) return;
             await fetch('/api/settings/reset', { method: 'POST' });
-            location.href = '/index.html';
+            location.href = '/settings';
         }
 
         //Fonction Import CSV

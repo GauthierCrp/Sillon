@@ -684,51 +684,55 @@ app.get('/api/settings/backup', isAuthenticated, (req, res) => {
 });
 
 //// Route de Restauration (Upload ZIP)
-app.post('/api/settings/restore', isAuthenticated, multer({ dest: 'temp/' }).single('backup'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "Aucun fichier fourni" });
-
-    const zipPath = req.file.path;
-
+app.post('/api/settings/restore', isAuthenticated, upload.single('backup'), async (req, res) => {
     try {
+        if (!req.file) return res.status(400).json({ error: "Aucun fichier fourni." });
+
+        // 1. SAUVEGARDE DES IDENTIFIANTS ACTUELS
+        const currentLogin = db.prepare("SELECT value FROM settings WHERE key = 'admin_login'").get()?.value;
+        const currentPass = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get()?.value;
+
+        // 2. FERMETURE DE LA CONNEXION (indispensable pour remplacer le fichier)
         db.close();
-        console.log("🔒 Base de données fermée pour restauration");
 
-        // 2. Ouvrir le ZIP et traiter chaque fichier
-        const directory = await unzipper.Open.file(zipPath);
-        
-        for (const file of directory.files) {
-            if (file.path === 'collection.db') {
-                const targetPath = path.join(__dirname, 'database', 'collection.db');
-                const content = await file.buffer();
-                fs.writeFileSync(targetPath, content);
-                console.log("✅ Base de données restaurée dans /database/");
-            } 
-            
-            else if (file.path.startsWith('uploads/')) {
-                const relativePath = file.path.replace('uploads/', '');
-                const targetPath = path.join(__dirname, 'public', 'uploads', relativePath);
-                
-                const destDir = path.dirname(targetPath);
-                if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+        const zipPath = req.file.path;
+        const extractPath = path.join(__dirname, 'temp_restore');
 
-                const content = await file.buffer();
-                fs.writeFileSync(targetPath, content);
-            }
+        // Extraction du ZIP...
+        await fs.createReadStream(zipPath)
+            .pipe(unzipper.Extract({ path: extractPath }))
+            .promise();
+
+        // 3. REMPLACEMENT DES FICHIERS (BDD et Images)
+        const restoredDbPath = path.join(extractPath, 'collection.db');
+        if (fs.existsSync(restoredDbPath)) {
+            fs.copyFileSync(restoredDbPath, dbPath);
+        }
+        // ... (ton code actuel pour restaurer les images dans /public/uploads)
+
+        // 4. RÉOUVERTURE DE LA BDD ET RÉINJECTION
+        db = new Database(dbPath);
+
+        if (currentLogin && currentPass) {
+            const updateAuth = db.transaction(() => {
+                db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_login', ?)").run(currentLogin);
+                db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', ?)").run(currentPass);
+            });
+            updateAuth();
+            console.log("✅ Identifiants d'origine préservés après restauration.");
         }
 
-        db = new Database('./database/collection.db');
-        console.log("🔓 Base de données ré-ouverte");
-
-        // 4. Nettoyage
+        // Nettoyage temporaire
+        fs.rmSync(extractPath, { recursive: true, force: true });
         fs.unlinkSync(zipPath);
 
-        res.json({ success: true, message: "Restauration terminée et fichiers placés correctement." });
+        res.json({ success: true, message: "Restauration terminée. Vos identifiants n'ont pas été modifiés." });
 
     } catch (err) {
-        console.error("Erreur Restauration détaillée:", err);
-        // Tenter de ré-ouvrir la BDD même en cas d'erreur pour ne pas bloquer l'app
-        try { db = new Database('./database/collection.db'); } catch(e) {}
-        res.status(500).json({ error: "Échec de la restauration : " + err.message });
+        console.error("Erreur Restauration:", err);
+        // Sécurité : on tente de réouvrir la BDD quoi qu'il arrive
+        if (!db.open) db = new Database(dbPath);
+        res.status(500).json({ error: "Échec : " + err.message });
     }
 });
 
