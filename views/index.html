@@ -3,9 +3,10 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyVinyl - Dashboard</title>
+    <title>Sillon</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -238,6 +239,40 @@
                 gap: 10px;
                 padding-bottom: 10px;
             }
+
+            .logout-btn {
+                position: fixed !important;
+                bottom: 80px !important; 
+                right: 15px !important;
+                
+                width: 43px !important;
+                height: 43px !important;
+                border-radius: 50% !important;
+                
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #e74d3c3f !important;
+                color: rgba(255, 255, 255, 0.466) !important;
+                font-size: 0px;
+                border: 1px solid rgba(255, 255, 255, 0.486) !important;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                z-index: 10000 !important;
+                text-decoration: none !important;
+            }
+            .logout-btn span {
+                display: none !important;
+            }
+            .logout-btn svg {
+                margin: 0 !important;
+                display: flex !important;
+                width: 24px !important;
+                height: 24px !important;
+            }
+        
             .stat-card {
                 flex: 1 0 25%; /* Force les tuiles à être petites */
                 padding: 10px;
@@ -324,6 +359,12 @@
             } catch (err) {
                 console.error("Erreur stats:", err);
             }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log("Service Worker enregistré !"))
+            .catch(err => console.log("Erreur SW:", err));
         }
 
         window.onload = loadStats;

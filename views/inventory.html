@@ -3,8 +3,9 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
-    <title>MyVinyl - Ma Collection</title>
+    <title>Sillon</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -130,7 +131,7 @@
             font-weight: 700;
             font-size: 16px;
             transition: 0.3s;
-            margin-right: -200px; /* Ajustez ce chiffre selon vos goûts */
+            margin-right: -200px;
             z-index: 3000;
         }
 
@@ -455,7 +456,7 @@
                 position: relative;
                 margin: 0;
                 padding: 0;
-                touch-action: pan-y; /* Autorise le scroll vertical mais bloque le zoom/pan horizontal */
+                touch-action: pan-y;
             }
 
             /* 2. HEADER : Boutons côte à côte et barre de recherche dessous */
@@ -586,6 +587,8 @@
                     left: 20px !important;
                     z-index: 1000 !important;
                     transform: none !important;
+                    z-index: 5000;
+                    background: rgba(255, 255, 255, 0.1);
                 }
 
                 .btn-add-focus {
@@ -703,8 +706,6 @@
         </div>
         <div id="vinyl-grid" class="vinyl-grid"></div>
     </div>
-
-    <div id="vinyl-grid" class="vinyl-grid"></div>
     
     <div id="albumModal" class="modal">
         <div class="modal-content">
@@ -1038,13 +1039,11 @@
         let focusIndex = 0;
 
         function toggleView() {
-            const grid = document.getElementById('vinyl-grid');
-            const isGridVisible = window.getComputedStyle(grid).display !== 'none';
-
-            if (isGridVisible) {
-                switchView('focus');
-            } else {
+            const focusOverlay = document.getElementById('focus-overlay');
+            if (focusOverlay.style.display === 'flex') {
                 switchView('grid');
+            } else {
+                switchView('focus');
             }
         }
 
@@ -1103,13 +1102,15 @@
                 if (view === 'focus') {
                     grid.style.display = 'none';
                     focus.style.display = 'flex';
-                    label.innerText = "Mode Grille";
+                    if(label) label.innerText = "Mode Grille";
+                    document.body.classList.add('focus-open');
                     loadVinylSequence();
                 } else {
                     grid.style.display = 'grid';
                     focus.style.display = 'none';
-                    focus.classList.remove('focus-active');
-                    label.innerText = "Mode Focus";
+                    if(label) label.innerText = "Mode Focus";
+                    document.body.classList.remove('focus-open');
+                    window.scrollTo(0, 0);
                 }
             }
 
@@ -1185,6 +1186,12 @@
         function handleGesture() {
             if (touchendX < touchstartX - 50) nextVinyl(); // Swipe gauche -> Suivant
             if (touchendX > touchstartX + 50) prevVinyl(); // Swipe droite -> Précédent
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log("Service Worker enregistré !"))
+            .catch(err => console.log("Erreur SW:", err));
         }
     </script>
 </body>
