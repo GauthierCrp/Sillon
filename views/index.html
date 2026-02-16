@@ -3,9 +3,13 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sillon">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#380d38">
     <title>Sillon</title>
     <style>
         :root {
@@ -58,7 +62,6 @@
             font-size: 0.9em;
         }
 
-        /* Conteneur des Stats - Aligné horizontalement */
         .stats-container {
             display: flex;
             flex-direction: row;
@@ -95,7 +98,6 @@
             color: #fff;
         }
 
-        /* Grille des Tuiles - 3 colonnes sur une ligne */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -233,46 +235,35 @@
 
         @media (max-width: 600px) {
             .stats-container {
-                display: flex; /* Aligne sur une ligne */
+                display: flex;
                 flex-wrap: nowrap; 
-                overflow-x: auto; /* Permet de swiper si ça dépasse un peu */
+                overflow-x: auto;
                 gap: 10px;
                 padding-bottom: 10px;
             }
 
             .logout-btn {
-                position: fixed !important;
-                bottom: 80px !important; 
-                right: 15px !important;
-                
-                width: 43px !important;
-                height: 43px !important;
-                border-radius: 50% !important;
-                
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                
-                padding: 0 !important;
-                margin: 0 !important;
-                background: #e74d3c3f !important;
-                color: rgba(255, 255, 255, 0.466) !important;
-                font-size: 0px;
-                border: 1px solid rgba(255, 255, 255, 0.486) !important;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                z-index: 10000 !important;
-                text-decoration: none !important;
-            }
-            .logout-btn span {
-                display: none !important;
-            }
-            .logout-btn svg {
-                margin: 0 !important;
-                display: flex !important;
-                width: 24px !important;
-                height: 24px !important;
-            }
-        
+            position: fixed;
+            top: 10px;
+            right: 5px;
+            display: flex;
+            align-items: center;
+            gap: 0px;
+            padding: 10px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: #ff6b6b; 
+            text-decoration: none;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 200;
+            font-size: 0px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-right: 8px;
+        }
+
             .stat-card {
                 flex: 1 0 25%; /* Force les tuiles à être petites */
                 padding: 10px;
